@@ -154,7 +154,7 @@ void leerTelemetriaPeriodica() {
 
     // Misma línea DATA que finalmente irá hacia LabVIEW (Sección 3.3),
     // así probamos también ese formato de salida desde ya.
-    Serial.print("DATA:");
+    Serial.print("DATA,12,");
     Serial.print(altura); Serial.print(",");
     Serial.print(pwm); Serial.print(",");
     Serial.print(error); Serial.print(",");

@@ -179,7 +179,7 @@ void leerTelemetriaPeriodica() {
     uint16_t erroresCrc  = node.getResponseBuffer(IREG_ERRORES_CRC);
 
     // --- Hacia LabVIEW (Sección 3.3): valores crudos, escalados x10/x1000 ---
-    Serial.print("DATA:");
+    Serial.print("DATA,12,");
     Serial.print(altura); Serial.print(",");
     Serial.print(pwm); Serial.print(",");
     Serial.print(error); Serial.print(",");
