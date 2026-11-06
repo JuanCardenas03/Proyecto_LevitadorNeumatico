@@ -1,0 +1,1769 @@
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 1
+
+
+   1              		.syntax unified
+   2              		.cpu cortex-m3
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 1
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.thumb
+  14              		.syntax unified
+  15              		.file	"planta_modelo.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.global	__aeabi_ui2f
+  20              		.global	__aeabi_fmul
+  21              		.section	.text.aleatorio,"ax",%progbits
+  22              		.align	2
+  23              		.thumb
+  24              		.thumb_func
+  25              		.type	aleatorio, %function
+  26              	aleatorio:
+  27              	.LFB0:
+  28              		.file 1 "planta_modelo.c"
+   1:planta_modelo.c **** /* ============================================================================
+   2:planta_modelo.c ****  * planta_modelo.c  -  Levitador simulado
+   3:planta_modelo.c ****  * ==========================================================================*/
+   4:planta_modelo.c **** #include "planta_modelo.h"
+   5:planta_modelo.c **** 
+   6:planta_modelo.c **** #define G_CM_S2     981.0f   /* gravedad                                   */
+   7:planta_modelo.c **** #define VT_CM_S     180.0f   /* velocidad terminal de la pelota            */
+   8:planta_modelo.c **** #define K_AIRE      7.0f     /* cm/s de aire por % de duty sobre la zona muerta */
+   9:planta_modelo.c **** #define ZONA_MUERTA 20.0f    /* % por debajo del cual el ventilador no sopla */
+  10:planta_modelo.c **** #define BETA        0.015f   /* perdida de velocidad del aire por cm de altura */
+  11:planta_modelo.c **** #define TAU_FAN     0.20f    /* s, inercia del ventilador                  */
+  12:planta_modelo.c **** #define TECHO_CM    3.0f     /* la pelota no se acerca mas que esto al sensor */
+  13:planta_modelo.c **** 
+  14:planta_modelo.c **** #define P_SIN_ECO   0.010f   /* probabilidad de lectura perdida            */
+  15:planta_modelo.c **** #define P_ATIPICO   0.015f   /* probabilidad de eco de pared               */
+  16:planta_modelo.c **** #define RUIDO_CM    0.35f    /* escala del ruido (sigma ~ 0.2 cm)          */
+  17:planta_modelo.c **** 
+  18:planta_modelo.c **** static float aleatorio(planta_t *p)   /* 0..1 */
+  19:planta_modelo.c **** {
+  29              		.loc 1 19 0
+  30              		.cfi_startproc
+  31              		@ args = 0, pretend = 0, frame = 0
+  32              		@ frame_needed = 0, uses_anonymous_args = 0
+  33              	.LVL0:
+  34 0000 08B5     		push	{r3, lr}
+  35              		.cfi_def_cfa_offset 8
+  36              		.cfi_offset 3, -8
+  37              		.cfi_offset 14, -4
+  20:planta_modelo.c ****     p->semilla = p->semilla * 1664525u + 1013904223u;
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 2
+
+
+  38              		.loc 1 20 0
+  39 0002 0269     		ldr	r2, [r0, #16]
+  40 0004 064B     		ldr	r3, .L3
+  41 0006 0749     		ldr	r1, .L3+4
+  42 0008 01FB0233 		mla	r3, r1, r2, r3
+  43 000c 0361     		str	r3, [r0, #16]
+  21:planta_modelo.c ****     return (float)(p->semilla >> 8) * (1.0f / 16777216.0f);
+  44              		.loc 1 21 0
+  45 000e 180A     		lsrs	r0, r3, #8
+  46              	.LVL1:
+  47 0010 FFF7FEFF 		bl	__aeabi_ui2f
+  48              	.LVL2:
+  49 0014 4FF04E51 		mov	r1, #864026624
+  50 0018 FFF7FEFF 		bl	__aeabi_fmul
+  51              	.LVL3:
+  22:planta_modelo.c **** }
+  52              		.loc 1 22 0
+  53 001c 08BD     		pop	{r3, pc}
+  54              	.L4:
+  55 001e 00BF     		.align	2
+  56              	.L3:
+  57 0020 5FF36E3C 		.word	1013904223
+  58 0024 0D661900 		.word	1664525
+  59              		.cfi_endproc
+  60              	.LFE0:
+  61              		.size	aleatorio, .-aleatorio
+  62              		.section	.text.planta_init,"ax",%progbits
+  63              		.align	2
+  64              		.global	planta_init
+  65              		.thumb
+  66              		.thumb_func
+  67              		.type	planta_init, %function
+  68              	planta_init:
+  69              	.LFB1:
+  23:planta_modelo.c **** 
+  24:planta_modelo.c **** void planta_init(planta_t *p, float base_cm, uint32_t semilla)
+  25:planta_modelo.c **** {
+  70              		.loc 1 25 0
+  71              		.cfi_startproc
+  72              		@ args = 0, pretend = 0, frame = 0
+  73              		@ frame_needed = 0, uses_anonymous_args = 0
+  74              		@ link register save eliminated.
+  75              	.LVL4:
+  26:planta_modelo.c ****     p->h       = 0.0f;
+  76              		.loc 1 26 0
+  77 0000 0023     		movs	r3, #0
+  78 0002 0360     		str	r3, [r0]	@ float
+  27:planta_modelo.c ****     p->v       = 0.0f;
+  79              		.loc 1 27 0
+  80 0004 4360     		str	r3, [r0, #4]	@ float
+  28:planta_modelo.c ****     p->w       = 0.0f;
+  81              		.loc 1 28 0
+  82 0006 8360     		str	r3, [r0, #8]	@ float
+  29:planta_modelo.c ****     p->base    = base_cm;
+  83              		.loc 1 29 0
+  84 0008 C160     		str	r1, [r0, #12]	@ float
+  30:planta_modelo.c ****     p->semilla = (semilla != 0u) ? semilla : 1u;
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 3
+
+
+  85              		.loc 1 30 0
+  86 000a 0AB9     		cbnz	r2, .L7
+  87 000c 0122     		movs	r2, #1
+  88              	.LVL5:
+  89 000e FFE7     		b	.L6
+  90              	.LVL6:
+  91              	.L7:
+  92              	.L6:
+  93              		.loc 1 30 0 is_stmt 0 discriminator 4
+  94 0010 0261     		str	r2, [r0, #16]
+  31:planta_modelo.c ****     p->sin_eco = 0u;
+  95              		.loc 1 31 0 is_stmt 1 discriminator 4
+  96 0012 0023     		movs	r3, #0
+  97 0014 0375     		strb	r3, [r0, #20]
+  98 0016 7047     		bx	lr
+  99              		.cfi_endproc
+ 100              	.LFE1:
+ 101              		.size	planta_init, .-planta_init
+ 102              		.global	__aeabi_fsub
+ 103              		.global	__aeabi_fadd
+ 104              		.global	__aeabi_fcmplt
+ 105              		.global	__aeabi_fdiv
+ 106              		.global	__aeabi_fcmple
+ 107              		.global	__aeabi_fcmpgt
+ 108              		.section	.text.planta_avanzar,"ax",%progbits
+ 109              		.align	2
+ 110              		.global	planta_avanzar
+ 111              		.thumb
+ 112              		.thumb_func
+ 113              		.type	planta_avanzar, %function
+ 114              	planta_avanzar:
+ 115              	.LFB2:
+  32:planta_modelo.c **** }
+  33:planta_modelo.c **** 
+  34:planta_modelo.c **** void planta_avanzar(planta_t *p, float duty_pct, uint16_t dt_ms)
+  35:planta_modelo.c **** {
+ 116              		.loc 1 35 0
+ 117              		.cfi_startproc
+ 118              		@ args = 0, pretend = 0, frame = 0
+ 119              		@ frame_needed = 0, uses_anonymous_args = 0
+ 120              	.LVL7:
+ 121 0000 2DE9F84F 		push	{r3, r4, r5, r6, r7, r8, r9, r10, fp, lr}
+ 122              		.cfi_def_cfa_offset 40
+ 123              		.cfi_offset 3, -40
+ 124              		.cfi_offset 4, -36
+ 125              		.cfi_offset 5, -32
+ 126              		.cfi_offset 6, -28
+ 127              		.cfi_offset 7, -24
+ 128              		.cfi_offset 8, -20
+ 129              		.cfi_offset 9, -16
+ 130              		.cfi_offset 10, -12
+ 131              		.cfi_offset 11, -8
+ 132              		.cfi_offset 14, -4
+ 133 0004 0446     		mov	r4, r0
+ 134 0006 8A46     		mov	r10, r1
+ 135 0008 9146     		mov	r9, r2
+ 136              	.LVL8:
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 4
+
+
+  36:planta_modelo.c ****     const float dt = 0.001f;
+  37:planta_modelo.c ****     float ef, va, rel, a, techo;
+  38:planta_modelo.c ****     uint16_t i;
+  39:planta_modelo.c **** 
+  40:planta_modelo.c ****     techo = p->base - TECHO_CM;
+ 137              		.loc 1 40 0
+ 138 000a 4149     		ldr	r1, .L31
+ 139              	.LVL9:
+ 140 000c C068     		ldr	r0, [r0, #12]	@ float
+ 141              	.LVL10:
+ 142 000e FFF7FEFF 		bl	__aeabi_fsub
+ 143              	.LVL11:
+ 144 0012 8046     		mov	r8, r0
+ 145              	.LVL12:
+  41:planta_modelo.c ****     for (i = 0u; i < dt_ms; i++) {
+ 146              		.loc 1 41 0
+ 147 0014 0025     		movs	r5, #0
+ 148 0016 77E0     		b	.L9
+ 149              	.LVL13:
+ 150              	.L20:
+  42:planta_modelo.c ****         p->w += (duty_pct - p->w) * (dt / TAU_FAN);
+ 151              		.loc 1 42 0
+ 152 0018 A668     		ldr	r6, [r4, #8]	@ float
+ 153 001a 3146     		mov	r1, r6
+ 154 001c 5046     		mov	r0, r10
+ 155 001e FFF7FEFF 		bl	__aeabi_fsub
+ 156              	.LVL14:
+ 157 0022 3C49     		ldr	r1, .L31+4
+ 158 0024 FFF7FEFF 		bl	__aeabi_fmul
+ 159              	.LVL15:
+ 160 0028 0146     		mov	r1, r0
+ 161 002a 3046     		mov	r0, r6
+ 162 002c FFF7FEFF 		bl	__aeabi_fadd
+ 163              	.LVL16:
+ 164 0030 A060     		str	r0, [r4, #8]	@ float
+  43:planta_modelo.c ****         ef = p->w - ZONA_MUERTA;
+ 165              		.loc 1 43 0
+ 166 0032 3949     		ldr	r1, .L31+8
+ 167 0034 FFF7FEFF 		bl	__aeabi_fsub
+ 168              	.LVL17:
+ 169 0038 0646     		mov	r6, r0
+ 170              	.LVL18:
+  44:planta_modelo.c ****         if (ef < 0.0f) { ef = 0.0f; }
+ 171              		.loc 1 44 0
+ 172 003a 0021     		movs	r1, #0
+ 173 003c FFF7FEFF 		bl	__aeabi_fcmplt
+ 174              	.LVL19:
+ 175 0040 00B1     		cbz	r0, .L10
+ 176 0042 0026     		movs	r6, #0
+ 177              	.LVL20:
+ 178              	.L10:
+  45:planta_modelo.c ****         va = K_AIRE * ef * (1.0f - BETA * p->h);
+ 179              		.loc 1 45 0
+ 180 0044 3549     		ldr	r1, .L31+12
+ 181 0046 3046     		mov	r0, r6
+ 182 0048 FFF7FEFF 		bl	__aeabi_fmul
+ 183              	.LVL21:
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 5
+
+
+ 184 004c 0746     		mov	r7, r0
+ 185 004e 2668     		ldr	r6, [r4]	@ float
+ 186              	.LVL22:
+ 187 0050 3349     		ldr	r1, .L31+16
+ 188 0052 3046     		mov	r0, r6
+ 189 0054 FFF7FEFF 		bl	__aeabi_fmul
+ 190              	.LVL23:
+ 191 0058 0146     		mov	r1, r0
+ 192 005a 4FF07E50 		mov	r0, #1065353216
+ 193 005e FFF7FEFF 		bl	__aeabi_fsub
+ 194              	.LVL24:
+ 195 0062 0146     		mov	r1, r0
+ 196 0064 3846     		mov	r0, r7
+ 197 0066 FFF7FEFF 		bl	__aeabi_fmul
+ 198              	.LVL25:
+ 199 006a 8346     		mov	fp, r0
+ 200              	.LVL26:
+  46:planta_modelo.c ****         if (va < 0.0f) { va = 0.0f; }
+ 201              		.loc 1 46 0
+ 202 006c 0021     		movs	r1, #0
+ 203 006e FFF7FEFF 		bl	__aeabi_fcmplt
+ 204              	.LVL27:
+ 205 0072 08B1     		cbz	r0, .L11
+ 206 0074 4FF0000B 		mov	fp, #0
+ 207              	.LVL28:
+ 208              	.L11:
+  47:planta_modelo.c **** 
+  48:planta_modelo.c ****         rel = va - p->v;
+ 209              		.loc 1 48 0
+ 210 0078 6768     		ldr	r7, [r4, #4]	@ float
+ 211 007a 3946     		mov	r1, r7
+ 212 007c 5846     		mov	r0, fp
+ 213 007e FFF7FEFF 		bl	__aeabi_fsub
+ 214              	.LVL29:
+ 215 0082 8346     		mov	fp, r0
+ 216              	.LVL30:
+  49:planta_modelo.c ****         a   = G_CM_S2 * ((rel * ((rel < 0.0f) ? -rel : rel)) / (VT_CM_S * VT_CM_S) - 1.0f);
+ 217              		.loc 1 49 0
+ 218 0084 0021     		movs	r1, #0
+ 219 0086 FFF7FEFF 		bl	__aeabi_fcmplt
+ 220              	.LVL31:
+ 221 008a 10B1     		cbz	r0, .L29
+ 222              		.loc 1 49 0 is_stmt 0 discriminator 1
+ 223 008c 0BF10040 		add	r0, fp, #-2147483648
+ 224 0090 00E0     		b	.L12
+ 225              	.L29:
+ 226              		.loc 1 49 0
+ 227 0092 5846     		mov	r0, fp
+ 228              	.L12:
+ 229              		.loc 1 49 0 discriminator 4
+ 230 0094 5946     		mov	r1, fp
+ 231 0096 FFF7FEFF 		bl	__aeabi_fmul
+ 232              	.LVL32:
+ 233 009a 2249     		ldr	r1, .L31+20
+ 234 009c FFF7FEFF 		bl	__aeabi_fdiv
+ 235              	.LVL33:
+ 236 00a0 4FF07E51 		mov	r1, #1065353216
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 6
+
+
+ 237 00a4 FFF7FEFF 		bl	__aeabi_fsub
+ 238              	.LVL34:
+ 239 00a8 1F49     		ldr	r1, .L31+24
+ 240 00aa FFF7FEFF 		bl	__aeabi_fmul
+ 241              	.LVL35:
+  50:planta_modelo.c ****         p->v += a * dt;
+ 242              		.loc 1 50 0 is_stmt 1 discriminator 4
+ 243 00ae 1F49     		ldr	r1, .L31+28
+ 244 00b0 FFF7FEFF 		bl	__aeabi_fmul
+ 245              	.LVL36:
+ 246 00b4 0146     		mov	r1, r0
+ 247 00b6 3846     		mov	r0, r7
+ 248 00b8 FFF7FEFF 		bl	__aeabi_fadd
+ 249              	.LVL37:
+ 250 00bc 0746     		mov	r7, r0
+ 251 00be 6060     		str	r0, [r4, #4]	@ float
+  51:planta_modelo.c ****         p->h += p->v * dt;
+ 252              		.loc 1 51 0 discriminator 4
+ 253 00c0 1A49     		ldr	r1, .L31+28
+ 254 00c2 FFF7FEFF 		bl	__aeabi_fmul
+ 255              	.LVL38:
+ 256 00c6 0146     		mov	r1, r0
+ 257 00c8 3046     		mov	r0, r6
+ 258 00ca FFF7FEFF 		bl	__aeabi_fadd
+ 259              	.LVL39:
+ 260 00ce 2060     		str	r0, [r4]	@ float
+  52:planta_modelo.c **** 
+  53:planta_modelo.c ****         if (p->h <= 0.0f)  { p->h = 0.0f;  if (p->v < 0.0f) { p->v = 0.0f; } }
+ 261              		.loc 1 53 0 discriminator 4
+ 262 00d0 0021     		movs	r1, #0
+ 263 00d2 FFF7FEFF 		bl	__aeabi_fcmple
+ 264              	.LVL40:
+ 265 00d6 38B1     		cbz	r0, .L14
+ 266              		.loc 1 53 0 is_stmt 0 discriminator 1
+ 267 00d8 0021     		movs	r1, #0
+ 268 00da 2160     		str	r1, [r4]	@ float
+ 269 00dc 3846     		mov	r0, r7
+ 270 00de FFF7FEFF 		bl	__aeabi_fcmplt
+ 271              	.LVL41:
+ 272 00e2 08B1     		cbz	r0, .L14
+ 273              		.loc 1 53 0 discriminator 2
+ 274 00e4 0023     		movs	r3, #0
+ 275 00e6 6360     		str	r3, [r4, #4]	@ float
+ 276              	.L14:
+  54:planta_modelo.c ****         if (p->h >= techo) { p->h = techo; if (p->v > 0.0f) { p->v = 0.0f; } }
+ 277              		.loc 1 54 0 is_stmt 1
+ 278 00e8 2168     		ldr	r1, [r4]	@ float
+ 279 00ea 4046     		mov	r0, r8
+ 280 00ec FFF7FEFF 		bl	__aeabi_fcmple
+ 281              	.LVL42:
+ 282 00f0 40B1     		cbz	r0, .L17
+ 283              		.loc 1 54 0 is_stmt 0 discriminator 1
+ 284 00f2 C4F80080 		str	r8, [r4]	@ float
+ 285 00f6 0021     		movs	r1, #0
+ 286 00f8 6068     		ldr	r0, [r4, #4]	@ float
+ 287 00fa FFF7FEFF 		bl	__aeabi_fcmpgt
+ 288              	.LVL43:
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 7
+
+
+ 289 00fe 08B1     		cbz	r0, .L17
+ 290              		.loc 1 54 0 discriminator 2
+ 291 0100 0023     		movs	r3, #0
+ 292 0102 6360     		str	r3, [r4, #4]	@ float
+ 293              	.L17:
+  41:planta_modelo.c ****         p->w += (duty_pct - p->w) * (dt / TAU_FAN);
+ 294              		.loc 1 41 0 is_stmt 1 discriminator 2
+ 295 0104 0135     		adds	r5, r5, #1
+ 296              	.LVL44:
+ 297 0106 ADB2     		uxth	r5, r5
+ 298              	.LVL45:
+ 299              	.L9:
+  41:planta_modelo.c ****         p->w += (duty_pct - p->w) * (dt / TAU_FAN);
+ 300              		.loc 1 41 0 is_stmt 0 discriminator 1
+ 301 0108 4D45     		cmp	r5, r9
+ 302 010a 85D3     		bcc	.L20
+  55:planta_modelo.c ****     }
+  56:planta_modelo.c **** }
+ 303              		.loc 1 56 0 is_stmt 1
+ 304 010c BDE8F88F 		pop	{r3, r4, r5, r6, r7, r8, r9, r10, fp, pc}
+ 305              	.LVL46:
+ 306              	.L32:
+ 307              		.align	2
+ 308              	.L31:
+ 309 0110 00004040 		.word	1077936128
+ 310 0114 0BD7A33B 		.word	1000593163
+ 311 0118 0000A041 		.word	1101004800
+ 312 011c 0000E040 		.word	1088421888
+ 313 0120 8FC2753C 		.word	1014350479
+ 314 0124 0020FD46 		.word	1190993920
+ 315 0128 00407544 		.word	1148534784
+ 316 012c 6F12833A 		.word	981668463
+ 317              		.cfi_endproc
+ 318              	.LFE2:
+ 319              		.size	planta_avanzar, .-planta_avanzar
+ 320              		.section	.text.planta_medir,"ax",%progbits
+ 321              		.align	2
+ 322              		.global	planta_medir
+ 323              		.thumb
+ 324              		.thumb_func
+ 325              		.type	planta_medir, %function
+ 326              	planta_medir:
+ 327              	.LFB3:
+  57:planta_modelo.c **** 
+  58:planta_modelo.c **** float planta_medir(planta_t *p)
+  59:planta_modelo.c **** {
+ 328              		.loc 1 59 0
+ 329              		.cfi_startproc
+ 330              		@ args = 0, pretend = 0, frame = 0
+ 331              		@ frame_needed = 0, uses_anonymous_args = 0
+ 332              	.LVL47:
+ 333 0000 38B5     		push	{r3, r4, r5, lr}
+ 334              		.cfi_def_cfa_offset 16
+ 335              		.cfi_offset 3, -16
+ 336              		.cfi_offset 4, -12
+ 337              		.cfi_offset 5, -8
+ 338              		.cfi_offset 14, -4
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 8
+
+
+ 339 0002 0446     		mov	r4, r0
+  60:planta_modelo.c ****     float r = aleatorio(p);
+ 340              		.loc 1 60 0
+ 341 0004 FFF7FEFF 		bl	aleatorio
+ 342              	.LVL48:
+  61:planta_modelo.c ****     float ruido, d;
+  62:planta_modelo.c **** 
+  63:planta_modelo.c ****     if ((p->sin_eco != 0u) || (r < P_SIN_ECO)) {
+ 343              		.loc 1 63 0
+ 344 0008 237D     		ldrb	r3, [r4, #20]	@ zero_extendqisi2
+ 345 000a 002B     		cmp	r3, #0
+ 346 000c 4DD1     		bne	.L38
+ 347 000e 0546     		mov	r5, r0
+ 348              		.loc 1 63 0 is_stmt 0 discriminator 1
+ 349 0010 2949     		ldr	r1, .L46
+ 350 0012 FFF7FEFF 		bl	__aeabi_fcmplt
+ 351              	.LVL49:
+ 352 0016 0028     		cmp	r0, #0
+ 353 0018 49D1     		bne	.L39
+  64:planta_modelo.c ****         return -1.0f;
+  65:planta_modelo.c ****     }
+  66:planta_modelo.c ****     if (r < (P_SIN_ECO + P_ATIPICO)) {
+ 354              		.loc 1 66 0 is_stmt 1
+ 355 001a 2849     		ldr	r1, .L46+4
+ 356 001c 2846     		mov	r0, r5
+ 357 001e FFF7FEFF 		bl	__aeabi_fcmplt
+ 358              	.LVL50:
+ 359 0022 78B1     		cbz	r0, .L43
+  67:planta_modelo.c ****         return 3.0f + aleatorio(p) * (p->base - 3.0f);    /* eco de la pared */
+ 360              		.loc 1 67 0
+ 361 0024 2046     		mov	r0, r4
+ 362 0026 FFF7FEFF 		bl	aleatorio
+ 363              	.LVL51:
+ 364 002a 0546     		mov	r5, r0
+ 365              	.LVL52:
+ 366 002c 2449     		ldr	r1, .L46+8
+ 367 002e E068     		ldr	r0, [r4, #12]	@ float
+ 368 0030 FFF7FEFF 		bl	__aeabi_fsub
+ 369              	.LVL53:
+ 370 0034 0146     		mov	r1, r0
+ 371 0036 2846     		mov	r0, r5
+ 372 0038 FFF7FEFF 		bl	__aeabi_fmul
+ 373              	.LVL54:
+ 374 003c 2049     		ldr	r1, .L46+8
+ 375 003e FFF7FEFF 		bl	__aeabi_fadd
+ 376              	.LVL55:
+ 377 0042 38BD     		pop	{r3, r4, r5, pc}
+ 378              	.LVL56:
+ 379              	.L43:
+  68:planta_modelo.c ****     }
+  69:planta_modelo.c ****     ruido = (aleatorio(p) + aleatorio(p) + aleatorio(p) + aleatorio(p) - 2.0f) * RUIDO_CM;
+ 380              		.loc 1 69 0
+ 381 0044 2046     		mov	r0, r4
+ 382 0046 FFF7FEFF 		bl	aleatorio
+ 383              	.LVL57:
+ 384 004a 0546     		mov	r5, r0
+ 385              	.LVL58:
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 9
+
+
+ 386 004c 2046     		mov	r0, r4
+ 387 004e FFF7FEFF 		bl	aleatorio
+ 388              	.LVL59:
+ 389 0052 0146     		mov	r1, r0
+ 390 0054 2846     		mov	r0, r5
+ 391 0056 FFF7FEFF 		bl	__aeabi_fadd
+ 392              	.LVL60:
+ 393 005a 0546     		mov	r5, r0
+ 394 005c 2046     		mov	r0, r4
+ 395 005e FFF7FEFF 		bl	aleatorio
+ 396              	.LVL61:
+ 397 0062 0146     		mov	r1, r0
+ 398 0064 2846     		mov	r0, r5
+ 399 0066 FFF7FEFF 		bl	__aeabi_fadd
+ 400              	.LVL62:
+ 401 006a 0546     		mov	r5, r0
+ 402 006c 2046     		mov	r0, r4
+ 403 006e FFF7FEFF 		bl	aleatorio
+ 404              	.LVL63:
+ 405 0072 0146     		mov	r1, r0
+ 406 0074 2846     		mov	r0, r5
+ 407 0076 FFF7FEFF 		bl	__aeabi_fadd
+ 408              	.LVL64:
+ 409 007a 4FF08041 		mov	r1, #1073741824
+ 410 007e FFF7FEFF 		bl	__aeabi_fsub
+ 411              	.LVL65:
+ 412 0082 1049     		ldr	r1, .L46+12
+ 413 0084 FFF7FEFF 		bl	__aeabi_fmul
+ 414              	.LVL66:
+ 415 0088 0546     		mov	r5, r0
+ 416              	.LVL67:
+  70:planta_modelo.c ****     d = p->base - p->h + ruido;
+ 417              		.loc 1 70 0
+ 418 008a 2168     		ldr	r1, [r4]	@ float
+ 419 008c E068     		ldr	r0, [r4, #12]	@ float
+ 420              	.LVL68:
+ 421 008e FFF7FEFF 		bl	__aeabi_fsub
+ 422              	.LVL69:
+ 423 0092 0146     		mov	r1, r0
+ 424 0094 2846     		mov	r0, r5
+ 425 0096 FFF7FEFF 		bl	__aeabi_fadd
+ 426              	.LVL70:
+ 427 009a 0446     		mov	r4, r0
+ 428              	.LVL71:
+  71:planta_modelo.c ****     return (d < 2.0f) ? -1.0f : d;
+ 429              		.loc 1 71 0
+ 430 009c 4FF08041 		mov	r1, #1073741824
+ 431 00a0 FFF7FEFF 		bl	__aeabi_fcmplt
+ 432              	.LVL72:
+ 433 00a4 28B1     		cbz	r0, .L44
+ 434 00a6 0848     		ldr	r0, .L46+16
+ 435 00a8 38BD     		pop	{r3, r4, r5, pc}
+ 436              	.LVL73:
+ 437              	.L38:
+  64:planta_modelo.c ****     }
+ 438              		.loc 1 64 0
+ 439 00aa 0748     		ldr	r0, .L46+16
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 10
+
+
+ 440              	.LVL74:
+ 441 00ac 38BD     		pop	{r3, r4, r5, pc}
+ 442              	.LVL75:
+ 443              	.L39:
+ 444 00ae 0648     		ldr	r0, .L46+16
+ 445 00b0 38BD     		pop	{r3, r4, r5, pc}
+ 446              	.LVL76:
+ 447              	.L44:
+ 448              		.loc 1 71 0
+ 449 00b2 2046     		mov	r0, r4
+  72:planta_modelo.c **** }
+ 450              		.loc 1 72 0
+ 451 00b4 38BD     		pop	{r3, r4, r5, pc}
+ 452              	.LVL77:
+ 453              	.L47:
+ 454 00b6 00BF     		.align	2
+ 455              	.L46:
+ 456 00b8 0AD7233C 		.word	1008981770
+ 457 00bc CCCCCC3C 		.word	1020054732
+ 458 00c0 00004040 		.word	1077936128
+ 459 00c4 3333B33E 		.word	1051931443
+ 460 00c8 000080BF 		.word	-1082130432
+ 461              		.cfi_endproc
+ 462              	.LFE3:
+ 463              		.size	planta_medir, .-planta_medir
+ 464              		.text
+ 465              	.Letext0:
+ 466              		.file 2 "c:\\program files (x86)\\cypress\\psoc creator\\4.4\\psoc creator\\import\\gnu\\arm\\5.4.
+ 467              		.file 3 "c:\\program files (x86)\\cypress\\psoc creator\\4.4\\psoc creator\\import\\gnu\\arm\\5.4.
+ 468              		.file 4 "planta_modelo.h"
+ 469              		.section	.debug_info,"",%progbits
+ 470              	.Ldebug_info0:
+ 471 0000 DA020000 		.4byte	0x2da
+ 472 0004 0400     		.2byte	0x4
+ 473 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 474 000a 04       		.byte	0x4
+ 475 000b 01       		.uleb128 0x1
+ 476 000c 46000000 		.4byte	.LASF28
+ 477 0010 0C       		.byte	0xc
+ 478 0011 18020000 		.4byte	.LASF29
+ 479 0015 2D010000 		.4byte	.LASF30
+ 480 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 481 001d 00000000 		.4byte	0
+ 482 0021 00000000 		.4byte	.Ldebug_line0
+ 483 0025 02       		.uleb128 0x2
+ 484 0026 04       		.byte	0x4
+ 485 0027 04       		.byte	0x4
+ 486 0028 32000000 		.4byte	.LASF0
+ 487 002c 02       		.uleb128 0x2
+ 488 002d 01       		.byte	0x1
+ 489 002e 06       		.byte	0x6
+ 490 002f 3A020000 		.4byte	.LASF1
+ 491 0033 03       		.uleb128 0x3
+ 492 0034 00000000 		.4byte	.LASF4
+ 493 0038 02       		.byte	0x2
+ 494 0039 1D       		.byte	0x1d
+ 495 003a 3E000000 		.4byte	0x3e
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 11
+
+
+ 496 003e 02       		.uleb128 0x2
+ 497 003f 01       		.byte	0x1
+ 498 0040 08       		.byte	0x8
+ 499 0041 38000000 		.4byte	.LASF2
+ 500 0045 02       		.uleb128 0x2
+ 501 0046 02       		.byte	0x2
+ 502 0047 05       		.byte	0x5
+ 503 0048 0E020000 		.4byte	.LASF3
+ 504 004c 03       		.uleb128 0x3
+ 505 004d 12010000 		.4byte	.LASF5
+ 506 0051 02       		.byte	0x2
+ 507 0052 2B       		.byte	0x2b
+ 508 0053 57000000 		.4byte	0x57
+ 509 0057 02       		.uleb128 0x2
+ 510 0058 02       		.byte	0x2
+ 511 0059 07       		.byte	0x7
+ 512 005a E6000000 		.4byte	.LASF6
+ 513 005e 02       		.uleb128 0x2
+ 514 005f 04       		.byte	0x4
+ 515 0060 05       		.byte	0x5
+ 516 0061 31020000 		.4byte	.LASF7
+ 517 0065 03       		.uleb128 0x3
+ 518 0066 1D010000 		.4byte	.LASF8
+ 519 006a 02       		.byte	0x2
+ 520 006b 41       		.byte	0x41
+ 521 006c 70000000 		.4byte	0x70
+ 522 0070 02       		.uleb128 0x2
+ 523 0071 04       		.byte	0x4
+ 524 0072 07       		.byte	0x7
+ 525 0073 D4000000 		.4byte	.LASF9
+ 526 0077 02       		.uleb128 0x2
+ 527 0078 08       		.byte	0x8
+ 528 0079 05       		.byte	0x5
+ 529 007a F7010000 		.4byte	.LASF10
+ 530 007e 02       		.uleb128 0x2
+ 531 007f 08       		.byte	0x8
+ 532 0080 07       		.byte	0x7
+ 533 0081 B3010000 		.4byte	.LASF11
+ 534 0085 04       		.uleb128 0x4
+ 535 0086 04       		.byte	0x4
+ 536 0087 05       		.byte	0x5
+ 537 0088 696E7400 		.ascii	"int\000"
+ 538 008c 02       		.uleb128 0x2
+ 539 008d 04       		.byte	0x4
+ 540 008e 07       		.byte	0x7
+ 541 008f A6010000 		.4byte	.LASF12
+ 542 0093 03       		.uleb128 0x3
+ 543 0094 CA010000 		.4byte	.LASF13
+ 544 0098 03       		.byte	0x3
+ 545 0099 18       		.byte	0x18
+ 546 009a 33000000 		.4byte	0x33
+ 547 009e 03       		.uleb128 0x3
+ 548 009f 05020000 		.4byte	.LASF14
+ 549 00a3 03       		.byte	0x3
+ 550 00a4 24       		.byte	0x24
+ 551 00a5 4C000000 		.4byte	0x4c
+ 552 00a9 03       		.uleb128 0x3
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 12
+
+
+ 553 00aa 28020000 		.4byte	.LASF15
+ 554 00ae 03       		.byte	0x3
+ 555 00af 30       		.byte	0x30
+ 556 00b0 65000000 		.4byte	0x65
+ 557 00b4 05       		.uleb128 0x5
+ 558 00b5 18       		.byte	0x18
+ 559 00b6 04       		.byte	0x4
+ 560 00b7 11       		.byte	0x11
+ 561 00b8 FF000000 		.4byte	0xff
+ 562 00bc 06       		.uleb128 0x6
+ 563 00bd 6800     		.ascii	"h\000"
+ 564 00bf 04       		.byte	0x4
+ 565 00c0 12       		.byte	0x12
+ 566 00c1 25000000 		.4byte	0x25
+ 567 00c5 00       		.byte	0
+ 568 00c6 06       		.uleb128 0x6
+ 569 00c7 7600     		.ascii	"v\000"
+ 570 00c9 04       		.byte	0x4
+ 571 00ca 13       		.byte	0x13
+ 572 00cb 25000000 		.4byte	0x25
+ 573 00cf 04       		.byte	0x4
+ 574 00d0 06       		.uleb128 0x6
+ 575 00d1 7700     		.ascii	"w\000"
+ 576 00d3 04       		.byte	0x4
+ 577 00d4 14       		.byte	0x14
+ 578 00d5 25000000 		.4byte	0x25
+ 579 00d9 08       		.byte	0x8
+ 580 00da 07       		.uleb128 0x7
+ 581 00db 28010000 		.4byte	.LASF16
+ 582 00df 04       		.byte	0x4
+ 583 00e0 15       		.byte	0x15
+ 584 00e1 25000000 		.4byte	0x25
+ 585 00e5 0C       		.byte	0xc
+ 586 00e6 07       		.uleb128 0x7
+ 587 00e7 E0010000 		.4byte	.LASF17
+ 588 00eb 04       		.byte	0x4
+ 589 00ec 16       		.byte	0x16
+ 590 00ed A9000000 		.4byte	0xa9
+ 591 00f1 10       		.byte	0x10
+ 592 00f2 07       		.uleb128 0x7
+ 593 00f3 D2010000 		.4byte	.LASF18
+ 594 00f7 04       		.byte	0x4
+ 595 00f8 17       		.byte	0x17
+ 596 00f9 93000000 		.4byte	0x93
+ 597 00fd 14       		.byte	0x14
+ 598 00fe 00       		.byte	0
+ 599 00ff 03       		.uleb128 0x3
+ 600 0100 EE010000 		.4byte	.LASF19
+ 601 0104 04       		.byte	0x4
+ 602 0105 18       		.byte	0x18
+ 603 0106 B4000000 		.4byte	0xb4
+ 604 010a 08       		.uleb128 0x8
+ 605 010b 19000000 		.4byte	.LASF31
+ 606 010f 01       		.byte	0x1
+ 607 0110 12       		.byte	0x12
+ 608 0111 25000000 		.4byte	0x25
+ 609 0115 00000000 		.4byte	.LFB0
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 13
+
+
+ 610 0119 28000000 		.4byte	.LFE0-.LFB0
+ 611 011d 01       		.uleb128 0x1
+ 612 011e 9C       		.byte	0x9c
+ 613 011f 31010000 		.4byte	0x131
+ 614 0123 09       		.uleb128 0x9
+ 615 0124 7000     		.ascii	"p\000"
+ 616 0126 01       		.byte	0x1
+ 617 0127 12       		.byte	0x12
+ 618 0128 31010000 		.4byte	0x131
+ 619 012c 00000000 		.4byte	.LLST0
+ 620 0130 00       		.byte	0
+ 621 0131 0A       		.uleb128 0xa
+ 622 0132 04       		.byte	0x4
+ 623 0133 FF000000 		.4byte	0xff
+ 624 0137 0B       		.uleb128 0xb
+ 625 0138 06010000 		.4byte	.LASF21
+ 626 013c 01       		.byte	0x1
+ 627 013d 18       		.byte	0x18
+ 628 013e 00000000 		.4byte	.LFB1
+ 629 0142 18000000 		.4byte	.LFE1-.LFB1
+ 630 0146 01       		.uleb128 0x1
+ 631 0147 9C       		.byte	0x9c
+ 632 0148 74010000 		.4byte	0x174
+ 633 014c 0C       		.uleb128 0xc
+ 634 014d 7000     		.ascii	"p\000"
+ 635 014f 01       		.byte	0x1
+ 636 0150 18       		.byte	0x18
+ 637 0151 31010000 		.4byte	0x131
+ 638 0155 01       		.uleb128 0x1
+ 639 0156 50       		.byte	0x50
+ 640 0157 0D       		.uleb128 0xd
+ 641 0158 46020000 		.4byte	.LASF20
+ 642 015c 01       		.byte	0x1
+ 643 015d 18       		.byte	0x18
+ 644 015e 25000000 		.4byte	0x25
+ 645 0162 01       		.uleb128 0x1
+ 646 0163 51       		.byte	0x51
+ 647 0164 0E       		.uleb128 0xe
+ 648 0165 E0010000 		.4byte	.LASF17
+ 649 0169 01       		.byte	0x1
+ 650 016a 18       		.byte	0x18
+ 651 016b A9000000 		.4byte	0xa9
+ 652 016f 21000000 		.4byte	.LLST1
+ 653 0173 00       		.byte	0
+ 654 0174 0F       		.uleb128 0xf
+ 655 0175 0A000000 		.4byte	.LASF22
+ 656 0179 01       		.byte	0x1
+ 657 017a 22       		.byte	0x22
+ 658 017b 00000000 		.4byte	.LFB2
+ 659 017f 30010000 		.4byte	.LFE2-.LFB2
+ 660 0183 01       		.uleb128 0x1
+ 661 0184 9C       		.byte	0x9c
+ 662 0185 18020000 		.4byte	0x218
+ 663 0189 09       		.uleb128 0x9
+ 664 018a 7000     		.ascii	"p\000"
+ 665 018c 01       		.byte	0x1
+ 666 018d 22       		.byte	0x22
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 14
+
+
+ 667 018e 31010000 		.4byte	0x131
+ 668 0192 42000000 		.4byte	.LLST2
+ 669 0196 0E       		.uleb128 0xe
+ 670 0197 23000000 		.4byte	.LASF23
+ 671 019b 01       		.byte	0x1
+ 672 019c 22       		.byte	0x22
+ 673 019d 25000000 		.4byte	0x25
+ 674 01a1 6E000000 		.4byte	.LLST3
+ 675 01a5 0E       		.uleb128 0xe
+ 676 01a6 2C000000 		.4byte	.LASF24
+ 677 01aa 01       		.byte	0x1
+ 678 01ab 22       		.byte	0x22
+ 679 01ac 9E000000 		.4byte	0x9e
+ 680 01b0 9C000000 		.4byte	.LLST4
+ 681 01b4 10       		.uleb128 0x10
+ 682 01b5 647400   		.ascii	"dt\000"
+ 683 01b8 01       		.byte	0x1
+ 684 01b9 24       		.byte	0x24
+ 685 01ba 18020000 		.4byte	0x218
+ 686 01be 04       		.byte	0x4
+ 687 01bf 6F12833A 		.4byte	0x3a83126f
+ 688 01c3 11       		.uleb128 0x11
+ 689 01c4 656600   		.ascii	"ef\000"
+ 690 01c7 01       		.byte	0x1
+ 691 01c8 25       		.byte	0x25
+ 692 01c9 25000000 		.4byte	0x25
+ 693 01cd BD000000 		.4byte	.LLST5
+ 694 01d1 11       		.uleb128 0x11
+ 695 01d2 766100   		.ascii	"va\000"
+ 696 01d5 01       		.byte	0x1
+ 697 01d6 25       		.byte	0x25
+ 698 01d7 25000000 		.4byte	0x25
+ 699 01db DB000000 		.4byte	.LLST6
+ 700 01df 11       		.uleb128 0x11
+ 701 01e0 72656C00 		.ascii	"rel\000"
+ 702 01e4 01       		.byte	0x1
+ 703 01e5 25       		.byte	0x25
+ 704 01e6 25000000 		.4byte	0x25
+ 705 01ea F9000000 		.4byte	.LLST7
+ 706 01ee 11       		.uleb128 0x11
+ 707 01ef 6100     		.ascii	"a\000"
+ 708 01f1 01       		.byte	0x1
+ 709 01f2 25       		.byte	0x25
+ 710 01f3 25000000 		.4byte	0x25
+ 711 01f7 17010000 		.4byte	.LLST8
+ 712 01fb 12       		.uleb128 0x12
+ 713 01fc DA010000 		.4byte	.LASF25
+ 714 0200 01       		.byte	0x1
+ 715 0201 25       		.byte	0x25
+ 716 0202 25000000 		.4byte	0x25
+ 717 0206 2A010000 		.4byte	.LLST9
+ 718 020a 11       		.uleb128 0x11
+ 719 020b 6900     		.ascii	"i\000"
+ 720 020d 01       		.byte	0x1
+ 721 020e 26       		.byte	0x26
+ 722 020f 9E000000 		.4byte	0x9e
+ 723 0213 48010000 		.4byte	.LLST10
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 15
+
+
+ 724 0217 00       		.byte	0
+ 725 0218 13       		.uleb128 0x13
+ 726 0219 25000000 		.4byte	0x25
+ 727 021d 14       		.uleb128 0x14
+ 728 021e F9000000 		.4byte	.LASF26
+ 729 0222 01       		.byte	0x1
+ 730 0223 3A       		.byte	0x3a
+ 731 0224 25000000 		.4byte	0x25
+ 732 0228 00000000 		.4byte	.LFB3
+ 733 022c CC000000 		.4byte	.LFE3-.LFB3
+ 734 0230 01       		.uleb128 0x1
+ 735 0231 9C       		.byte	0x9c
+ 736 0232 09       		.uleb128 0x9
+ 737 0233 7000     		.ascii	"p\000"
+ 738 0235 01       		.byte	0x1
+ 739 0236 3A       		.byte	0x3a
+ 740 0237 31010000 		.4byte	0x131
+ 741 023b 72010000 		.4byte	.LLST11
+ 742 023f 11       		.uleb128 0x11
+ 743 0240 7200     		.ascii	"r\000"
+ 744 0242 01       		.byte	0x1
+ 745 0243 3C       		.byte	0x3c
+ 746 0244 25000000 		.4byte	0x25
+ 747 0248 B7010000 		.4byte	.LLST12
+ 748 024c 12       		.uleb128 0x12
+ 749 024d E8010000 		.4byte	.LASF27
+ 750 0251 01       		.byte	0x1
+ 751 0252 3D       		.byte	0x3d
+ 752 0253 25000000 		.4byte	0x25
+ 753 0257 F6010000 		.4byte	.LLST13
+ 754 025b 11       		.uleb128 0x11
+ 755 025c 6400     		.ascii	"d\000"
+ 756 025e 01       		.byte	0x1
+ 757 025f 3D       		.byte	0x3d
+ 758 0260 25000000 		.4byte	0x25
+ 759 0264 1F020000 		.4byte	.LLST14
+ 760 0268 15       		.uleb128 0x15
+ 761 0269 08000000 		.4byte	.LVL48
+ 762 026d 0A010000 		.4byte	0x10a
+ 763 0271 7C020000 		.4byte	0x27c
+ 764 0275 16       		.uleb128 0x16
+ 765 0276 01       		.uleb128 0x1
+ 766 0277 50       		.byte	0x50
+ 767 0278 02       		.uleb128 0x2
+ 768 0279 74       		.byte	0x74
+ 769 027a 00       		.sleb128 0
+ 770 027b 00       		.byte	0
+ 771 027c 15       		.uleb128 0x15
+ 772 027d 2A000000 		.4byte	.LVL51
+ 773 0281 0A010000 		.4byte	0x10a
+ 774 0285 90020000 		.4byte	0x290
+ 775 0289 16       		.uleb128 0x16
+ 776 028a 01       		.uleb128 0x1
+ 777 028b 50       		.byte	0x50
+ 778 028c 02       		.uleb128 0x2
+ 779 028d 74       		.byte	0x74
+ 780 028e 00       		.sleb128 0
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 16
+
+
+ 781 028f 00       		.byte	0
+ 782 0290 15       		.uleb128 0x15
+ 783 0291 4A000000 		.4byte	.LVL57
+ 784 0295 0A010000 		.4byte	0x10a
+ 785 0299 A4020000 		.4byte	0x2a4
+ 786 029d 16       		.uleb128 0x16
+ 787 029e 01       		.uleb128 0x1
+ 788 029f 50       		.byte	0x50
+ 789 02a0 02       		.uleb128 0x2
+ 790 02a1 74       		.byte	0x74
+ 791 02a2 00       		.sleb128 0
+ 792 02a3 00       		.byte	0
+ 793 02a4 15       		.uleb128 0x15
+ 794 02a5 52000000 		.4byte	.LVL59
+ 795 02a9 0A010000 		.4byte	0x10a
+ 796 02ad B8020000 		.4byte	0x2b8
+ 797 02b1 16       		.uleb128 0x16
+ 798 02b2 01       		.uleb128 0x1
+ 799 02b3 50       		.byte	0x50
+ 800 02b4 02       		.uleb128 0x2
+ 801 02b5 74       		.byte	0x74
+ 802 02b6 00       		.sleb128 0
+ 803 02b7 00       		.byte	0
+ 804 02b8 15       		.uleb128 0x15
+ 805 02b9 62000000 		.4byte	.LVL61
+ 806 02bd 0A010000 		.4byte	0x10a
+ 807 02c1 CC020000 		.4byte	0x2cc
+ 808 02c5 16       		.uleb128 0x16
+ 809 02c6 01       		.uleb128 0x1
+ 810 02c7 50       		.byte	0x50
+ 811 02c8 02       		.uleb128 0x2
+ 812 02c9 74       		.byte	0x74
+ 813 02ca 00       		.sleb128 0
+ 814 02cb 00       		.byte	0
+ 815 02cc 17       		.uleb128 0x17
+ 816 02cd 72000000 		.4byte	.LVL63
+ 817 02d1 0A010000 		.4byte	0x10a
+ 818 02d5 16       		.uleb128 0x16
+ 819 02d6 01       		.uleb128 0x1
+ 820 02d7 50       		.byte	0x50
+ 821 02d8 02       		.uleb128 0x2
+ 822 02d9 74       		.byte	0x74
+ 823 02da 00       		.sleb128 0
+ 824 02db 00       		.byte	0
+ 825 02dc 00       		.byte	0
+ 826 02dd 00       		.byte	0
+ 827              		.section	.debug_abbrev,"",%progbits
+ 828              	.Ldebug_abbrev0:
+ 829 0000 01       		.uleb128 0x1
+ 830 0001 11       		.uleb128 0x11
+ 831 0002 01       		.byte	0x1
+ 832 0003 25       		.uleb128 0x25
+ 833 0004 0E       		.uleb128 0xe
+ 834 0005 13       		.uleb128 0x13
+ 835 0006 0B       		.uleb128 0xb
+ 836 0007 03       		.uleb128 0x3
+ 837 0008 0E       		.uleb128 0xe
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 17
+
+
+ 838 0009 1B       		.uleb128 0x1b
+ 839 000a 0E       		.uleb128 0xe
+ 840 000b 55       		.uleb128 0x55
+ 841 000c 17       		.uleb128 0x17
+ 842 000d 11       		.uleb128 0x11
+ 843 000e 01       		.uleb128 0x1
+ 844 000f 10       		.uleb128 0x10
+ 845 0010 17       		.uleb128 0x17
+ 846 0011 00       		.byte	0
+ 847 0012 00       		.byte	0
+ 848 0013 02       		.uleb128 0x2
+ 849 0014 24       		.uleb128 0x24
+ 850 0015 00       		.byte	0
+ 851 0016 0B       		.uleb128 0xb
+ 852 0017 0B       		.uleb128 0xb
+ 853 0018 3E       		.uleb128 0x3e
+ 854 0019 0B       		.uleb128 0xb
+ 855 001a 03       		.uleb128 0x3
+ 856 001b 0E       		.uleb128 0xe
+ 857 001c 00       		.byte	0
+ 858 001d 00       		.byte	0
+ 859 001e 03       		.uleb128 0x3
+ 860 001f 16       		.uleb128 0x16
+ 861 0020 00       		.byte	0
+ 862 0021 03       		.uleb128 0x3
+ 863 0022 0E       		.uleb128 0xe
+ 864 0023 3A       		.uleb128 0x3a
+ 865 0024 0B       		.uleb128 0xb
+ 866 0025 3B       		.uleb128 0x3b
+ 867 0026 0B       		.uleb128 0xb
+ 868 0027 49       		.uleb128 0x49
+ 869 0028 13       		.uleb128 0x13
+ 870 0029 00       		.byte	0
+ 871 002a 00       		.byte	0
+ 872 002b 04       		.uleb128 0x4
+ 873 002c 24       		.uleb128 0x24
+ 874 002d 00       		.byte	0
+ 875 002e 0B       		.uleb128 0xb
+ 876 002f 0B       		.uleb128 0xb
+ 877 0030 3E       		.uleb128 0x3e
+ 878 0031 0B       		.uleb128 0xb
+ 879 0032 03       		.uleb128 0x3
+ 880 0033 08       		.uleb128 0x8
+ 881 0034 00       		.byte	0
+ 882 0035 00       		.byte	0
+ 883 0036 05       		.uleb128 0x5
+ 884 0037 13       		.uleb128 0x13
+ 885 0038 01       		.byte	0x1
+ 886 0039 0B       		.uleb128 0xb
+ 887 003a 0B       		.uleb128 0xb
+ 888 003b 3A       		.uleb128 0x3a
+ 889 003c 0B       		.uleb128 0xb
+ 890 003d 3B       		.uleb128 0x3b
+ 891 003e 0B       		.uleb128 0xb
+ 892 003f 01       		.uleb128 0x1
+ 893 0040 13       		.uleb128 0x13
+ 894 0041 00       		.byte	0
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 18
+
+
+ 895 0042 00       		.byte	0
+ 896 0043 06       		.uleb128 0x6
+ 897 0044 0D       		.uleb128 0xd
+ 898 0045 00       		.byte	0
+ 899 0046 03       		.uleb128 0x3
+ 900 0047 08       		.uleb128 0x8
+ 901 0048 3A       		.uleb128 0x3a
+ 902 0049 0B       		.uleb128 0xb
+ 903 004a 3B       		.uleb128 0x3b
+ 904 004b 0B       		.uleb128 0xb
+ 905 004c 49       		.uleb128 0x49
+ 906 004d 13       		.uleb128 0x13
+ 907 004e 38       		.uleb128 0x38
+ 908 004f 0B       		.uleb128 0xb
+ 909 0050 00       		.byte	0
+ 910 0051 00       		.byte	0
+ 911 0052 07       		.uleb128 0x7
+ 912 0053 0D       		.uleb128 0xd
+ 913 0054 00       		.byte	0
+ 914 0055 03       		.uleb128 0x3
+ 915 0056 0E       		.uleb128 0xe
+ 916 0057 3A       		.uleb128 0x3a
+ 917 0058 0B       		.uleb128 0xb
+ 918 0059 3B       		.uleb128 0x3b
+ 919 005a 0B       		.uleb128 0xb
+ 920 005b 49       		.uleb128 0x49
+ 921 005c 13       		.uleb128 0x13
+ 922 005d 38       		.uleb128 0x38
+ 923 005e 0B       		.uleb128 0xb
+ 924 005f 00       		.byte	0
+ 925 0060 00       		.byte	0
+ 926 0061 08       		.uleb128 0x8
+ 927 0062 2E       		.uleb128 0x2e
+ 928 0063 01       		.byte	0x1
+ 929 0064 03       		.uleb128 0x3
+ 930 0065 0E       		.uleb128 0xe
+ 931 0066 3A       		.uleb128 0x3a
+ 932 0067 0B       		.uleb128 0xb
+ 933 0068 3B       		.uleb128 0x3b
+ 934 0069 0B       		.uleb128 0xb
+ 935 006a 27       		.uleb128 0x27
+ 936 006b 19       		.uleb128 0x19
+ 937 006c 49       		.uleb128 0x49
+ 938 006d 13       		.uleb128 0x13
+ 939 006e 11       		.uleb128 0x11
+ 940 006f 01       		.uleb128 0x1
+ 941 0070 12       		.uleb128 0x12
+ 942 0071 06       		.uleb128 0x6
+ 943 0072 40       		.uleb128 0x40
+ 944 0073 18       		.uleb128 0x18
+ 945 0074 9642     		.uleb128 0x2116
+ 946 0076 19       		.uleb128 0x19
+ 947 0077 01       		.uleb128 0x1
+ 948 0078 13       		.uleb128 0x13
+ 949 0079 00       		.byte	0
+ 950 007a 00       		.byte	0
+ 951 007b 09       		.uleb128 0x9
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 19
+
+
+ 952 007c 05       		.uleb128 0x5
+ 953 007d 00       		.byte	0
+ 954 007e 03       		.uleb128 0x3
+ 955 007f 08       		.uleb128 0x8
+ 956 0080 3A       		.uleb128 0x3a
+ 957 0081 0B       		.uleb128 0xb
+ 958 0082 3B       		.uleb128 0x3b
+ 959 0083 0B       		.uleb128 0xb
+ 960 0084 49       		.uleb128 0x49
+ 961 0085 13       		.uleb128 0x13
+ 962 0086 02       		.uleb128 0x2
+ 963 0087 17       		.uleb128 0x17
+ 964 0088 00       		.byte	0
+ 965 0089 00       		.byte	0
+ 966 008a 0A       		.uleb128 0xa
+ 967 008b 0F       		.uleb128 0xf
+ 968 008c 00       		.byte	0
+ 969 008d 0B       		.uleb128 0xb
+ 970 008e 0B       		.uleb128 0xb
+ 971 008f 49       		.uleb128 0x49
+ 972 0090 13       		.uleb128 0x13
+ 973 0091 00       		.byte	0
+ 974 0092 00       		.byte	0
+ 975 0093 0B       		.uleb128 0xb
+ 976 0094 2E       		.uleb128 0x2e
+ 977 0095 01       		.byte	0x1
+ 978 0096 3F       		.uleb128 0x3f
+ 979 0097 19       		.uleb128 0x19
+ 980 0098 03       		.uleb128 0x3
+ 981 0099 0E       		.uleb128 0xe
+ 982 009a 3A       		.uleb128 0x3a
+ 983 009b 0B       		.uleb128 0xb
+ 984 009c 3B       		.uleb128 0x3b
+ 985 009d 0B       		.uleb128 0xb
+ 986 009e 27       		.uleb128 0x27
+ 987 009f 19       		.uleb128 0x19
+ 988 00a0 11       		.uleb128 0x11
+ 989 00a1 01       		.uleb128 0x1
+ 990 00a2 12       		.uleb128 0x12
+ 991 00a3 06       		.uleb128 0x6
+ 992 00a4 40       		.uleb128 0x40
+ 993 00a5 18       		.uleb128 0x18
+ 994 00a6 9742     		.uleb128 0x2117
+ 995 00a8 19       		.uleb128 0x19
+ 996 00a9 01       		.uleb128 0x1
+ 997 00aa 13       		.uleb128 0x13
+ 998 00ab 00       		.byte	0
+ 999 00ac 00       		.byte	0
+ 1000 00ad 0C       		.uleb128 0xc
+ 1001 00ae 05       		.uleb128 0x5
+ 1002 00af 00       		.byte	0
+ 1003 00b0 03       		.uleb128 0x3
+ 1004 00b1 08       		.uleb128 0x8
+ 1005 00b2 3A       		.uleb128 0x3a
+ 1006 00b3 0B       		.uleb128 0xb
+ 1007 00b4 3B       		.uleb128 0x3b
+ 1008 00b5 0B       		.uleb128 0xb
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 20
+
+
+ 1009 00b6 49       		.uleb128 0x49
+ 1010 00b7 13       		.uleb128 0x13
+ 1011 00b8 02       		.uleb128 0x2
+ 1012 00b9 18       		.uleb128 0x18
+ 1013 00ba 00       		.byte	0
+ 1014 00bb 00       		.byte	0
+ 1015 00bc 0D       		.uleb128 0xd
+ 1016 00bd 05       		.uleb128 0x5
+ 1017 00be 00       		.byte	0
+ 1018 00bf 03       		.uleb128 0x3
+ 1019 00c0 0E       		.uleb128 0xe
+ 1020 00c1 3A       		.uleb128 0x3a
+ 1021 00c2 0B       		.uleb128 0xb
+ 1022 00c3 3B       		.uleb128 0x3b
+ 1023 00c4 0B       		.uleb128 0xb
+ 1024 00c5 49       		.uleb128 0x49
+ 1025 00c6 13       		.uleb128 0x13
+ 1026 00c7 02       		.uleb128 0x2
+ 1027 00c8 18       		.uleb128 0x18
+ 1028 00c9 00       		.byte	0
+ 1029 00ca 00       		.byte	0
+ 1030 00cb 0E       		.uleb128 0xe
+ 1031 00cc 05       		.uleb128 0x5
+ 1032 00cd 00       		.byte	0
+ 1033 00ce 03       		.uleb128 0x3
+ 1034 00cf 0E       		.uleb128 0xe
+ 1035 00d0 3A       		.uleb128 0x3a
+ 1036 00d1 0B       		.uleb128 0xb
+ 1037 00d2 3B       		.uleb128 0x3b
+ 1038 00d3 0B       		.uleb128 0xb
+ 1039 00d4 49       		.uleb128 0x49
+ 1040 00d5 13       		.uleb128 0x13
+ 1041 00d6 02       		.uleb128 0x2
+ 1042 00d7 17       		.uleb128 0x17
+ 1043 00d8 00       		.byte	0
+ 1044 00d9 00       		.byte	0
+ 1045 00da 0F       		.uleb128 0xf
+ 1046 00db 2E       		.uleb128 0x2e
+ 1047 00dc 01       		.byte	0x1
+ 1048 00dd 3F       		.uleb128 0x3f
+ 1049 00de 19       		.uleb128 0x19
+ 1050 00df 03       		.uleb128 0x3
+ 1051 00e0 0E       		.uleb128 0xe
+ 1052 00e1 3A       		.uleb128 0x3a
+ 1053 00e2 0B       		.uleb128 0xb
+ 1054 00e3 3B       		.uleb128 0x3b
+ 1055 00e4 0B       		.uleb128 0xb
+ 1056 00e5 27       		.uleb128 0x27
+ 1057 00e6 19       		.uleb128 0x19
+ 1058 00e7 11       		.uleb128 0x11
+ 1059 00e8 01       		.uleb128 0x1
+ 1060 00e9 12       		.uleb128 0x12
+ 1061 00ea 06       		.uleb128 0x6
+ 1062 00eb 40       		.uleb128 0x40
+ 1063 00ec 18       		.uleb128 0x18
+ 1064 00ed 9642     		.uleb128 0x2116
+ 1065 00ef 19       		.uleb128 0x19
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 21
+
+
+ 1066 00f0 01       		.uleb128 0x1
+ 1067 00f1 13       		.uleb128 0x13
+ 1068 00f2 00       		.byte	0
+ 1069 00f3 00       		.byte	0
+ 1070 00f4 10       		.uleb128 0x10
+ 1071 00f5 34       		.uleb128 0x34
+ 1072 00f6 00       		.byte	0
+ 1073 00f7 03       		.uleb128 0x3
+ 1074 00f8 08       		.uleb128 0x8
+ 1075 00f9 3A       		.uleb128 0x3a
+ 1076 00fa 0B       		.uleb128 0xb
+ 1077 00fb 3B       		.uleb128 0x3b
+ 1078 00fc 0B       		.uleb128 0xb
+ 1079 00fd 49       		.uleb128 0x49
+ 1080 00fe 13       		.uleb128 0x13
+ 1081 00ff 1C       		.uleb128 0x1c
+ 1082 0100 0A       		.uleb128 0xa
+ 1083 0101 00       		.byte	0
+ 1084 0102 00       		.byte	0
+ 1085 0103 11       		.uleb128 0x11
+ 1086 0104 34       		.uleb128 0x34
+ 1087 0105 00       		.byte	0
+ 1088 0106 03       		.uleb128 0x3
+ 1089 0107 08       		.uleb128 0x8
+ 1090 0108 3A       		.uleb128 0x3a
+ 1091 0109 0B       		.uleb128 0xb
+ 1092 010a 3B       		.uleb128 0x3b
+ 1093 010b 0B       		.uleb128 0xb
+ 1094 010c 49       		.uleb128 0x49
+ 1095 010d 13       		.uleb128 0x13
+ 1096 010e 02       		.uleb128 0x2
+ 1097 010f 17       		.uleb128 0x17
+ 1098 0110 00       		.byte	0
+ 1099 0111 00       		.byte	0
+ 1100 0112 12       		.uleb128 0x12
+ 1101 0113 34       		.uleb128 0x34
+ 1102 0114 00       		.byte	0
+ 1103 0115 03       		.uleb128 0x3
+ 1104 0116 0E       		.uleb128 0xe
+ 1105 0117 3A       		.uleb128 0x3a
+ 1106 0118 0B       		.uleb128 0xb
+ 1107 0119 3B       		.uleb128 0x3b
+ 1108 011a 0B       		.uleb128 0xb
+ 1109 011b 49       		.uleb128 0x49
+ 1110 011c 13       		.uleb128 0x13
+ 1111 011d 02       		.uleb128 0x2
+ 1112 011e 17       		.uleb128 0x17
+ 1113 011f 00       		.byte	0
+ 1114 0120 00       		.byte	0
+ 1115 0121 13       		.uleb128 0x13
+ 1116 0122 26       		.uleb128 0x26
+ 1117 0123 00       		.byte	0
+ 1118 0124 49       		.uleb128 0x49
+ 1119 0125 13       		.uleb128 0x13
+ 1120 0126 00       		.byte	0
+ 1121 0127 00       		.byte	0
+ 1122 0128 14       		.uleb128 0x14
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 22
+
+
+ 1123 0129 2E       		.uleb128 0x2e
+ 1124 012a 01       		.byte	0x1
+ 1125 012b 3F       		.uleb128 0x3f
+ 1126 012c 19       		.uleb128 0x19
+ 1127 012d 03       		.uleb128 0x3
+ 1128 012e 0E       		.uleb128 0xe
+ 1129 012f 3A       		.uleb128 0x3a
+ 1130 0130 0B       		.uleb128 0xb
+ 1131 0131 3B       		.uleb128 0x3b
+ 1132 0132 0B       		.uleb128 0xb
+ 1133 0133 27       		.uleb128 0x27
+ 1134 0134 19       		.uleb128 0x19
+ 1135 0135 49       		.uleb128 0x49
+ 1136 0136 13       		.uleb128 0x13
+ 1137 0137 11       		.uleb128 0x11
+ 1138 0138 01       		.uleb128 0x1
+ 1139 0139 12       		.uleb128 0x12
+ 1140 013a 06       		.uleb128 0x6
+ 1141 013b 40       		.uleb128 0x40
+ 1142 013c 18       		.uleb128 0x18
+ 1143 013d 9642     		.uleb128 0x2116
+ 1144 013f 19       		.uleb128 0x19
+ 1145 0140 00       		.byte	0
+ 1146 0141 00       		.byte	0
+ 1147 0142 15       		.uleb128 0x15
+ 1148 0143 898201   		.uleb128 0x4109
+ 1149 0146 01       		.byte	0x1
+ 1150 0147 11       		.uleb128 0x11
+ 1151 0148 01       		.uleb128 0x1
+ 1152 0149 31       		.uleb128 0x31
+ 1153 014a 13       		.uleb128 0x13
+ 1154 014b 01       		.uleb128 0x1
+ 1155 014c 13       		.uleb128 0x13
+ 1156 014d 00       		.byte	0
+ 1157 014e 00       		.byte	0
+ 1158 014f 16       		.uleb128 0x16
+ 1159 0150 8A8201   		.uleb128 0x410a
+ 1160 0153 00       		.byte	0
+ 1161 0154 02       		.uleb128 0x2
+ 1162 0155 18       		.uleb128 0x18
+ 1163 0156 9142     		.uleb128 0x2111
+ 1164 0158 18       		.uleb128 0x18
+ 1165 0159 00       		.byte	0
+ 1166 015a 00       		.byte	0
+ 1167 015b 17       		.uleb128 0x17
+ 1168 015c 898201   		.uleb128 0x4109
+ 1169 015f 01       		.byte	0x1
+ 1170 0160 11       		.uleb128 0x11
+ 1171 0161 01       		.uleb128 0x1
+ 1172 0162 31       		.uleb128 0x31
+ 1173 0163 13       		.uleb128 0x13
+ 1174 0164 00       		.byte	0
+ 1175 0165 00       		.byte	0
+ 1176 0166 00       		.byte	0
+ 1177              		.section	.debug_loc,"",%progbits
+ 1178              	.Ldebug_loc0:
+ 1179              	.LLST0:
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 23
+
+
+ 1180 0000 00000000 		.4byte	.LVL0
+ 1181 0004 10000000 		.4byte	.LVL1
+ 1182 0008 0100     		.2byte	0x1
+ 1183 000a 50       		.byte	0x50
+ 1184 000b 10000000 		.4byte	.LVL1
+ 1185 000f 28000000 		.4byte	.LFE0
+ 1186 0013 0400     		.2byte	0x4
+ 1187 0015 F3       		.byte	0xf3
+ 1188 0016 01       		.uleb128 0x1
+ 1189 0017 50       		.byte	0x50
+ 1190 0018 9F       		.byte	0x9f
+ 1191 0019 00000000 		.4byte	0
+ 1192 001d 00000000 		.4byte	0
+ 1193              	.LLST1:
+ 1194 0021 00000000 		.4byte	.LVL4
+ 1195 0025 0E000000 		.4byte	.LVL5
+ 1196 0029 0100     		.2byte	0x1
+ 1197 002b 52       		.byte	0x52
+ 1198 002c 0E000000 		.4byte	.LVL5
+ 1199 0030 18000000 		.4byte	.LFE1
+ 1200 0034 0400     		.2byte	0x4
+ 1201 0036 F3       		.byte	0xf3
+ 1202 0037 01       		.uleb128 0x1
+ 1203 0038 52       		.byte	0x52
+ 1204 0039 9F       		.byte	0x9f
+ 1205 003a 00000000 		.4byte	0
+ 1206 003e 00000000 		.4byte	0
+ 1207              	.LLST2:
+ 1208 0042 00000000 		.4byte	.LVL7
+ 1209 0046 0E000000 		.4byte	.LVL10
+ 1210 004a 0100     		.2byte	0x1
+ 1211 004c 50       		.byte	0x50
+ 1212 004d 0E000000 		.4byte	.LVL10
+ 1213 0051 10010000 		.4byte	.LVL46
+ 1214 0055 0100     		.2byte	0x1
+ 1215 0057 54       		.byte	0x54
+ 1216 0058 10010000 		.4byte	.LVL46
+ 1217 005c 30010000 		.4byte	.LFE2
+ 1218 0060 0400     		.2byte	0x4
+ 1219 0062 F3       		.byte	0xf3
+ 1220 0063 01       		.uleb128 0x1
+ 1221 0064 50       		.byte	0x50
+ 1222 0065 9F       		.byte	0x9f
+ 1223 0066 00000000 		.4byte	0
+ 1224 006a 00000000 		.4byte	0
+ 1225              	.LLST3:
+ 1226 006e 00000000 		.4byte	.LVL7
+ 1227 0072 0C000000 		.4byte	.LVL9
+ 1228 0076 0100     		.2byte	0x1
+ 1229 0078 51       		.byte	0x51
+ 1230 0079 0C000000 		.4byte	.LVL9
+ 1231 007d 10010000 		.4byte	.LVL46
+ 1232 0081 0100     		.2byte	0x1
+ 1233 0083 5A       		.byte	0x5a
+ 1234 0084 10010000 		.4byte	.LVL46
+ 1235 0088 30010000 		.4byte	.LFE2
+ 1236 008c 0600     		.2byte	0x6
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 24
+
+
+ 1237 008e F3       		.byte	0xf3
+ 1238 008f 03       		.uleb128 0x3
+ 1239 0090 F5       		.byte	0xf5
+ 1240 0091 01       		.uleb128 0x1
+ 1241 0092 25       		.uleb128 0x25
+ 1242 0093 9F       		.byte	0x9f
+ 1243 0094 00000000 		.4byte	0
+ 1244 0098 00000000 		.4byte	0
+ 1245              	.LLST4:
+ 1246 009c 00000000 		.4byte	.LVL7
+ 1247 00a0 11000000 		.4byte	.LVL11-1
+ 1248 00a4 0100     		.2byte	0x1
+ 1249 00a6 52       		.byte	0x52
+ 1250 00a7 11000000 		.4byte	.LVL11-1
+ 1251 00ab 30010000 		.4byte	.LFE2
+ 1252 00af 0400     		.2byte	0x4
+ 1253 00b1 F3       		.byte	0xf3
+ 1254 00b2 01       		.uleb128 0x1
+ 1255 00b3 52       		.byte	0x52
+ 1256 00b4 9F       		.byte	0x9f
+ 1257 00b5 00000000 		.4byte	0
+ 1258 00b9 00000000 		.4byte	0
+ 1259              	.LLST5:
+ 1260 00bd 3A000000 		.4byte	.LVL18
+ 1261 00c1 3F000000 		.4byte	.LVL19-1
+ 1262 00c5 0100     		.2byte	0x1
+ 1263 00c7 50       		.byte	0x50
+ 1264 00c8 3F000000 		.4byte	.LVL19-1
+ 1265 00cc 50000000 		.4byte	.LVL22
+ 1266 00d0 0100     		.2byte	0x1
+ 1267 00d2 56       		.byte	0x56
+ 1268 00d3 00000000 		.4byte	0
+ 1269 00d7 00000000 		.4byte	0
+ 1270              	.LLST6:
+ 1271 00db 6C000000 		.4byte	.LVL26
+ 1272 00df 71000000 		.4byte	.LVL27-1
+ 1273 00e3 0100     		.2byte	0x1
+ 1274 00e5 50       		.byte	0x50
+ 1275 00e6 71000000 		.4byte	.LVL27-1
+ 1276 00ea 84000000 		.4byte	.LVL30
+ 1277 00ee 0100     		.2byte	0x1
+ 1278 00f0 5B       		.byte	0x5b
+ 1279 00f1 00000000 		.4byte	0
+ 1280 00f5 00000000 		.4byte	0
+ 1281              	.LLST7:
+ 1282 00f9 84000000 		.4byte	.LVL30
+ 1283 00fd 89000000 		.4byte	.LVL31-1
+ 1284 0101 0100     		.2byte	0x1
+ 1285 0103 50       		.byte	0x50
+ 1286 0104 89000000 		.4byte	.LVL31-1
+ 1287 0108 08010000 		.4byte	.LVL45
+ 1288 010c 0100     		.2byte	0x1
+ 1289 010e 5B       		.byte	0x5b
+ 1290 010f 00000000 		.4byte	0
+ 1291 0113 00000000 		.4byte	0
+ 1292              	.LLST8:
+ 1293 0117 AE000000 		.4byte	.LVL35
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 25
+
+
+ 1294 011b B3000000 		.4byte	.LVL36-1
+ 1295 011f 0100     		.2byte	0x1
+ 1296 0121 50       		.byte	0x50
+ 1297 0122 00000000 		.4byte	0
+ 1298 0126 00000000 		.4byte	0
+ 1299              	.LLST9:
+ 1300 012a 14000000 		.4byte	.LVL12
+ 1301 012e 18000000 		.4byte	.LVL13
+ 1302 0132 0100     		.2byte	0x1
+ 1303 0134 50       		.byte	0x50
+ 1304 0135 18000000 		.4byte	.LVL13
+ 1305 0139 10010000 		.4byte	.LVL46
+ 1306 013d 0100     		.2byte	0x1
+ 1307 013f 58       		.byte	0x58
+ 1308 0140 00000000 		.4byte	0
+ 1309 0144 00000000 		.4byte	0
+ 1310              	.LLST10:
+ 1311 0148 14000000 		.4byte	.LVL12
+ 1312 014c 18000000 		.4byte	.LVL13
+ 1313 0150 0200     		.2byte	0x2
+ 1314 0152 30       		.byte	0x30
+ 1315 0153 9F       		.byte	0x9f
+ 1316 0154 18000000 		.4byte	.LVL13
+ 1317 0158 06010000 		.4byte	.LVL44
+ 1318 015c 0100     		.2byte	0x1
+ 1319 015e 55       		.byte	0x55
+ 1320 015f 08010000 		.4byte	.LVL45
+ 1321 0163 10010000 		.4byte	.LVL46
+ 1322 0167 0100     		.2byte	0x1
+ 1323 0169 55       		.byte	0x55
+ 1324 016a 00000000 		.4byte	0
+ 1325 016e 00000000 		.4byte	0
+ 1326              	.LLST11:
+ 1327 0172 00000000 		.4byte	.LVL47
+ 1328 0176 07000000 		.4byte	.LVL48-1
+ 1329 017a 0100     		.2byte	0x1
+ 1330 017c 50       		.byte	0x50
+ 1331 017d 07000000 		.4byte	.LVL48-1
+ 1332 0181 9C000000 		.4byte	.LVL71
+ 1333 0185 0100     		.2byte	0x1
+ 1334 0187 54       		.byte	0x54
+ 1335 0188 9C000000 		.4byte	.LVL71
+ 1336 018c AA000000 		.4byte	.LVL73
+ 1337 0190 0400     		.2byte	0x4
+ 1338 0192 F3       		.byte	0xf3
+ 1339 0193 01       		.uleb128 0x1
+ 1340 0194 50       		.byte	0x50
+ 1341 0195 9F       		.byte	0x9f
+ 1342 0196 AA000000 		.4byte	.LVL73
+ 1343 019a B2000000 		.4byte	.LVL76
+ 1344 019e 0100     		.2byte	0x1
+ 1345 01a0 54       		.byte	0x54
+ 1346 01a1 B2000000 		.4byte	.LVL76
+ 1347 01a5 CC000000 		.4byte	.LFE3
+ 1348 01a9 0400     		.2byte	0x4
+ 1349 01ab F3       		.byte	0xf3
+ 1350 01ac 01       		.uleb128 0x1
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 26
+
+
+ 1351 01ad 50       		.byte	0x50
+ 1352 01ae 9F       		.byte	0x9f
+ 1353 01af 00000000 		.4byte	0
+ 1354 01b3 00000000 		.4byte	0
+ 1355              	.LLST12:
+ 1356 01b7 08000000 		.4byte	.LVL48
+ 1357 01bb 15000000 		.4byte	.LVL49-1
+ 1358 01bf 0100     		.2byte	0x1
+ 1359 01c1 50       		.byte	0x50
+ 1360 01c2 15000000 		.4byte	.LVL49-1
+ 1361 01c6 2C000000 		.4byte	.LVL52
+ 1362 01ca 0100     		.2byte	0x1
+ 1363 01cc 55       		.byte	0x55
+ 1364 01cd 44000000 		.4byte	.LVL56
+ 1365 01d1 4C000000 		.4byte	.LVL58
+ 1366 01d5 0100     		.2byte	0x1
+ 1367 01d7 55       		.byte	0x55
+ 1368 01d8 AA000000 		.4byte	.LVL73
+ 1369 01dc AC000000 		.4byte	.LVL74
+ 1370 01e0 0100     		.2byte	0x1
+ 1371 01e2 50       		.byte	0x50
+ 1372 01e3 AE000000 		.4byte	.LVL75
+ 1373 01e7 B2000000 		.4byte	.LVL76
+ 1374 01eb 0100     		.2byte	0x1
+ 1375 01ed 55       		.byte	0x55
+ 1376 01ee 00000000 		.4byte	0
+ 1377 01f2 00000000 		.4byte	0
+ 1378              	.LLST13:
+ 1379 01f6 8A000000 		.4byte	.LVL67
+ 1380 01fa 8E000000 		.4byte	.LVL68
+ 1381 01fe 0100     		.2byte	0x1
+ 1382 0200 50       		.byte	0x50
+ 1383 0201 8E000000 		.4byte	.LVL68
+ 1384 0205 AA000000 		.4byte	.LVL73
+ 1385 0209 0100     		.2byte	0x1
+ 1386 020b 55       		.byte	0x55
+ 1387 020c B2000000 		.4byte	.LVL76
+ 1388 0210 B6000000 		.4byte	.LVL77
+ 1389 0214 0100     		.2byte	0x1
+ 1390 0216 55       		.byte	0x55
+ 1391 0217 00000000 		.4byte	0
+ 1392 021b 00000000 		.4byte	0
+ 1393              	.LLST14:
+ 1394 021f 9C000000 		.4byte	.LVL71
+ 1395 0223 A3000000 		.4byte	.LVL72-1
+ 1396 0227 0100     		.2byte	0x1
+ 1397 0229 50       		.byte	0x50
+ 1398 022a A3000000 		.4byte	.LVL72-1
+ 1399 022e AA000000 		.4byte	.LVL73
+ 1400 0232 0100     		.2byte	0x1
+ 1401 0234 54       		.byte	0x54
+ 1402 0235 B2000000 		.4byte	.LVL76
+ 1403 0239 B6000000 		.4byte	.LVL77
+ 1404 023d 0100     		.2byte	0x1
+ 1405 023f 54       		.byte	0x54
+ 1406 0240 B6000000 		.4byte	.LVL77
+ 1407 0244 CC000000 		.4byte	.LFE3
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 27
+
+
+ 1408 0248 0100     		.2byte	0x1
+ 1409 024a 50       		.byte	0x50
+ 1410 024b 00000000 		.4byte	0
+ 1411 024f 00000000 		.4byte	0
+ 1412              		.section	.debug_aranges,"",%progbits
+ 1413 0000 34000000 		.4byte	0x34
+ 1414 0004 0200     		.2byte	0x2
+ 1415 0006 00000000 		.4byte	.Ldebug_info0
+ 1416 000a 04       		.byte	0x4
+ 1417 000b 00       		.byte	0
+ 1418 000c 0000     		.2byte	0
+ 1419 000e 0000     		.2byte	0
+ 1420 0010 00000000 		.4byte	.LFB0
+ 1421 0014 28000000 		.4byte	.LFE0-.LFB0
+ 1422 0018 00000000 		.4byte	.LFB1
+ 1423 001c 18000000 		.4byte	.LFE1-.LFB1
+ 1424 0020 00000000 		.4byte	.LFB2
+ 1425 0024 30010000 		.4byte	.LFE2-.LFB2
+ 1426 0028 00000000 		.4byte	.LFB3
+ 1427 002c CC000000 		.4byte	.LFE3-.LFB3
+ 1428 0030 00000000 		.4byte	0
+ 1429 0034 00000000 		.4byte	0
+ 1430              		.section	.debug_ranges,"",%progbits
+ 1431              	.Ldebug_ranges0:
+ 1432 0000 00000000 		.4byte	.LFB0
+ 1433 0004 28000000 		.4byte	.LFE0
+ 1434 0008 00000000 		.4byte	.LFB1
+ 1435 000c 18000000 		.4byte	.LFE1
+ 1436 0010 00000000 		.4byte	.LFB2
+ 1437 0014 30010000 		.4byte	.LFE2
+ 1438 0018 00000000 		.4byte	.LFB3
+ 1439 001c CC000000 		.4byte	.LFE3
+ 1440 0020 00000000 		.4byte	0
+ 1441 0024 00000000 		.4byte	0
+ 1442              		.section	.debug_line,"",%progbits
+ 1443              	.Ldebug_line0:
+ 1444 0000 F1010000 		.section	.debug_str,"MS",%progbits,1
+ 1444      02003601 
+ 1444      00000201 
+ 1444      FB0E0D00 
+ 1444      01010101 
+ 1445              	.LASF4:
+ 1446 0000 5F5F7569 		.ascii	"__uint8_t\000"
+ 1446      6E74385F 
+ 1446      7400
+ 1447              	.LASF22:
+ 1448 000a 706C616E 		.ascii	"planta_avanzar\000"
+ 1448      74615F61 
+ 1448      76616E7A 
+ 1448      617200
+ 1449              	.LASF31:
+ 1450 0019 616C6561 		.ascii	"aleatorio\000"
+ 1450      746F7269 
+ 1450      6F00
+ 1451              	.LASF23:
+ 1452 0023 64757479 		.ascii	"duty_pct\000"
+ 1452      5F706374 
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 28
+
+
+ 1452      00
+ 1453              	.LASF24:
+ 1454 002c 64745F6D 		.ascii	"dt_ms\000"
+ 1454      7300
+ 1455              	.LASF0:
+ 1456 0032 666C6F61 		.ascii	"float\000"
+ 1456      7400
+ 1457              	.LASF2:
+ 1458 0038 756E7369 		.ascii	"unsigned char\000"
+ 1458      676E6564 
+ 1458      20636861 
+ 1458      7200
+ 1459              	.LASF28:
+ 1460 0046 474E5520 		.ascii	"GNU C11 5.4.1 20160609 (release) [ARM/embedded-5-br"
+ 1460      43313120 
+ 1460      352E342E 
+ 1460      31203230 
+ 1460      31363036 
+ 1461 0079 616E6368 		.ascii	"anch revision 237715] -mcpu=cortex-m3 -mthumb -g -O"
+ 1461      20726576 
+ 1461      6973696F 
+ 1461      6E203233 
+ 1461      37373135 
+ 1462 00ac 67202D66 		.ascii	"g -ffunction-sections -ffat-lto-objects\000"
+ 1462      66756E63 
+ 1462      74696F6E 
+ 1462      2D736563 
+ 1462      74696F6E 
+ 1463              	.LASF9:
+ 1464 00d4 6C6F6E67 		.ascii	"long unsigned int\000"
+ 1464      20756E73 
+ 1464      69676E65 
+ 1464      6420696E 
+ 1464      7400
+ 1465              	.LASF6:
+ 1466 00e6 73686F72 		.ascii	"short unsigned int\000"
+ 1466      7420756E 
+ 1466      7369676E 
+ 1466      65642069 
+ 1466      6E7400
+ 1467              	.LASF26:
+ 1468 00f9 706C616E 		.ascii	"planta_medir\000"
+ 1468      74615F6D 
+ 1468      65646972 
+ 1468      00
+ 1469              	.LASF21:
+ 1470 0106 706C616E 		.ascii	"planta_init\000"
+ 1470      74615F69 
+ 1470      6E697400 
+ 1471              	.LASF5:
+ 1472 0112 5F5F7569 		.ascii	"__uint16_t\000"
+ 1472      6E743136 
+ 1472      5F7400
+ 1473              	.LASF8:
+ 1474 011d 5F5F7569 		.ascii	"__uint32_t\000"
+ 1474      6E743332 
+ 1474      5F7400
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 29
+
+
+ 1475              	.LASF16:
+ 1476 0128 62617365 		.ascii	"base\000"
+ 1476      00
+ 1477              	.LASF30:
+ 1478 012d 433A5C55 		.ascii	"C:\\Users\\Usuario\\Documents\\1.Yo\\Universidad\\S"
+ 1478      73657273 
+ 1478      5C557375 
+ 1478      6172696F 
+ 1478      5C446F63 
+ 1479 015a 656D6573 		.ascii	"emestres\\IX\\VHDL\\Proyecto_LN\\Codigo\\PSoC\\psoc"
+ 1479      74726573 
+ 1479      5C49585C 
+ 1479      5648444C 
+ 1479      5C50726F 
+ 1480 0187 5F6C6576 		.ascii	"_levitador_pid\\Levitador.cydsn\000"
+ 1480      69746164 
+ 1480      6F725F70 
+ 1480      69645C4C 
+ 1480      65766974 
+ 1481              	.LASF12:
+ 1482 01a6 756E7369 		.ascii	"unsigned int\000"
+ 1482      676E6564 
+ 1482      20696E74 
+ 1482      00
+ 1483              	.LASF11:
+ 1484 01b3 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 1484      206C6F6E 
+ 1484      6720756E 
+ 1484      7369676E 
+ 1484      65642069 
+ 1485              	.LASF13:
+ 1486 01ca 75696E74 		.ascii	"uint8_t\000"
+ 1486      385F7400 
+ 1487              	.LASF18:
+ 1488 01d2 73696E5F 		.ascii	"sin_eco\000"
+ 1488      65636F00 
+ 1489              	.LASF25:
+ 1490 01da 74656368 		.ascii	"techo\000"
+ 1490      6F00
+ 1491              	.LASF17:
+ 1492 01e0 73656D69 		.ascii	"semilla\000"
+ 1492      6C6C6100 
+ 1493              	.LASF27:
+ 1494 01e8 72756964 		.ascii	"ruido\000"
+ 1494      6F00
+ 1495              	.LASF19:
+ 1496 01ee 706C616E 		.ascii	"planta_t\000"
+ 1496      74615F74 
+ 1496      00
+ 1497              	.LASF10:
+ 1498 01f7 6C6F6E67 		.ascii	"long long int\000"
+ 1498      206C6F6E 
+ 1498      6720696E 
+ 1498      7400
+ 1499              	.LASF14:
+ 1500 0205 75696E74 		.ascii	"uint16_t\000"
+ 1500      31365F74 
+ARM GAS  C:\Users\Usuario\AppData\Local\Temp\ccwhdS3T.s 			page 30
+
+
+ 1500      00
+ 1501              	.LASF3:
+ 1502 020e 73686F72 		.ascii	"short int\000"
+ 1502      7420696E 
+ 1502      7400
+ 1503              	.LASF29:
+ 1504 0218 706C616E 		.ascii	"planta_modelo.c\000"
+ 1504      74615F6D 
+ 1504      6F64656C 
+ 1504      6F2E6300 
+ 1505              	.LASF15:
+ 1506 0228 75696E74 		.ascii	"uint32_t\000"
+ 1506      33325F74 
+ 1506      00
+ 1507              	.LASF7:
+ 1508 0231 6C6F6E67 		.ascii	"long int\000"
+ 1508      20696E74 
+ 1508      00
+ 1509              	.LASF1:
+ 1510 023a 7369676E 		.ascii	"signed char\000"
+ 1510      65642063 
+ 1510      68617200 
+ 1511              	.LASF20:
+ 1512 0246 62617365 		.ascii	"base_cm\000"
+ 1512      5F636D00 
+ 1513              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 5.4.1 20160609 (release) [ARM/embedded-5-bran

@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CyXmlSerializer>
+<!--This file is machine generated and read. It is not intended to be edited by hand.-->
+<!--Due to this, there is no schema for this file.-->
+<CyGuid_843a90a4-0c4b-4e44-991d-05e7fb117a21 type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtWrkspcCustomData" version="4">
+<CyGuid_fdba8dfd-b15b-4469-9bbb-9e40c3e70997 type_name="CyDesigner.Common.Base.CyCustomData" version="2">
+<userData>
+<dataGuid v="1b906a0f-a7b6-4e4d-a428-82f98b53cb35">
+<CyGuid_1b906a0f-a7b6-4e4d-a428-82f98b53cb35 type_name="CyDesigner.Common.ProjMgmt.GUI.CyExplorerWindow+CyExplorerWindowState" version="3" SelectedTab="Source">
+<TreeKeys>
+<v>Source</v>
+<v>Components</v>
+<v>Output</v>
+</TreeKeys>
+<TreeStates>
+<CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="psoc_levitador_pid\Levitador\Source Files\consola.c">
+<ExpandedNodeIds>
+<v>psoc_levitador_pid</v>
+<v>psoc_levitador_pid\Levitador</v>
+<v>psoc_levitador_pid\Levitador\TopDesign</v>
+<v>psoc_levitador_pid\Levitador\Levitador.cydwr</v>
+<v>psoc_levitador_pid\Levitador\Levitador.cydwr\Pins</v>
+<v>psoc_levitador_pid\Levitador\Levitador.cydwr\Analog</v>
+<v>psoc_levitador_pid\Levitador\Levitador.cydwr\Clocks</v>
+<v>psoc_levitador_pid\Levitador\Levitador.cydwr\Interrupts</v>
+<v>psoc_levitador_pid\Levitador\Levitador.cydwr\DMA</v>
+<v>psoc_levitador_pid\Levitador\Levitador.cydwr\System</v>
+<v>psoc_levitador_pid\Levitador\Levitador.cydwr\Directives</v>
+<v>psoc_levitador_pid\Levitador\Levitador.cydwr\Flash Security</v>
+<v>psoc_levitador_pid\Levitador\Levitador.cydwr\EEPROM</v>
+<v>psoc_levitador_pid\Levitador\Header Files</v>
+<v>psoc_levitador_pid\Levitador\Header Files\consola.h</v>
+<v>psoc_levitador_pid\Levitador\Header Files\control.h</v>
+<v>psoc_levitador_pid\Levitador\Header Files\cyapicallbacks.h</v>
+<v>psoc_levitador_pid\Levitador\Header Files\debug_log.h</v>
+<v>psoc_levitador_pid\Levitador\Header Files\hw_levitador.h</v>
+<v>psoc_levitador_pid\Levitador\Header Files\modbus_slave.h</v>
+<v>psoc_levitador_pid\Levitador\Header Files\planta_modelo.h</v>
+<v>psoc_levitador_pid\Levitador\Source Files</v>
+<v>psoc_levitador_pid\Levitador\Source Files\consola.c</v>
+<v>psoc_levitador_pid\Levitador\Source Files\control.c</v>
+<v>psoc_levitador_pid\Levitador\Source Files\debug_log.c</v>
+<v>psoc_levitador_pid\Levitador\Source Files\hw_levitador.c</v>
+<v>psoc_levitador_pid\Levitador\Source Files\main.c</v>
+<v>psoc_levitador_pid\Levitador\Source Files\modbus_slave.c</v>
+<v>psoc_levitador_pid\Levitador\Source Files\planta_modelo.c</v>
+<v>psoc_levitador_pid\Levitador\Generated_Source\PSoC5</v>
+</ExpandedNodeIds>
+<VisibleNodeIds>
+<v>psoc_levitador_pid\Levitador\Levitador.cydwr\Clocks</v>
+</VisibleNodeIds>
+</CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
+<CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="">
+<ExpandedNodeIds>
+<v>psoc_levitador_pid</v>
+<v>psoc_levitador_pid\Levitador</v>
+<v>psoc_levitador_pid\Levitador\TopDesign</v>
+<v>psoc_levitador_pid\Levitador\TopDesign\TopDesign.cysch</v>
+</ExpandedNodeIds>
+<VisibleNodeIds />
+</CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
+<CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="">
+<ExpandedNodeIds>
+<v>psoc_levitador_pid</v>
+<v>psoc_levitador_pid\Levitador</v>
+<v>psoc_levitador_pid\Levitador\CortexM3</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\Clock_1MHz.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\Cm3Start.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\consola.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\control.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\cy_em_eeprom.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\CyBootAsmGnu.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\CyDmac.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\cyfitter_cfg.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\CyFlash.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\CyLib.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\cymetadata.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\cyPm.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\CySpc.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\cyutils.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\debug_log.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\hw_levitador.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\isr_echo.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\main.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\modbus_slave.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\Pin_ECHO.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\Pin_LED.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\Pin_PWM.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\Pin_TRIG.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\planta_modelo.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\PWM_Fan.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\PWM_Fan_PM.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\Timer_US.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\Timer_US_PM.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\UART_DBG.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\UART_DBG_BOOT.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\UART_DBG_INT.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\UART_DBG_IntClock.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\UART_DBG_PM.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\UART_RS485.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\UART_RS485_BOOT.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\UART_RS485_INT.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\UART_RS485_IntClock.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Listing Files\UART_RS485_PM.lst</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Levitador.elf</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Levitador.hex</v>
+<v>psoc_levitador_pid\Levitador\CortexM3\ARM_GCC_541\Debug\Levitador.map</v>
+<v>psoc_levitador_pid\Levitador\Levitador.gpdsc</v>
+<v>psoc_levitador_pid\Levitador\Levitador.rpt</v>
+<v>psoc_levitador_pid\Levitador\Levitador_timing.html</v>
+</ExpandedNodeIds>
+<VisibleNodeIds />
+</CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
+</TreeStates>
+<TreeKeysV2>
+<v>Datasheet</v>
+</TreeKeysV2>
+<TreeStatesV2>
+<CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="">
+<ExpandedNodeIds>
+<v>psoc_levitador_pid</v>
+<v>psoc_levitador_pid\Levitador</v>
+<v>psoc_levitador_pid\Levitador\PSoC 5LP Architecture TRM</v>
+<v>psoc_levitador_pid\Levitador\CY8C58LP Family Datasheet</v>
+<v>psoc_levitador_pid\Levitador\System Reference Guides</v>
+<v>psoc_levitador_pid\Levitador\System Reference Guides\cy_boot_v6_0</v>
+<v>psoc_levitador_pid\Levitador\cy_clock_v2_20</v>
+<v>psoc_levitador_pid\Levitador\cy_clock_v2_20\cy_clock_v2_20.pdf</v>
+<v>psoc_levitador_pid\Levitador\cy_isr_v1_70.pdf</v>
+<v>psoc_levitador_pid\Levitador\cy_pins_v2_20</v>
+<v>psoc_levitador_pid\Levitador\cy_pins_v2_20\cy_pins_v2_20.pdf</v>
+<v>psoc_levitador_pid\Levitador\PWM_v3_30.pdf</v>
+<v>psoc_levitador_pid\Levitador\Timer_v2_80.pdf</v>
+<v>psoc_levitador_pid\Levitador\UART_v2_50</v>
+<v>psoc_levitador_pid\Levitador\UART_v2_50\UART_v2_50.pdf</v>
+<v>psoc_levitador_pid\Levitador\ZeroTerminal</v>
+<v>psoc_levitador_pid\Levitador\ZeroTerminal\ZeroTerminal.pdf</v>
+</ExpandedNodeIds>
+<VisibleNodeIds />
+</CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
+</TreeStatesV2>
+</CyGuid_1b906a0f-a7b6-4e4d-a428-82f98b53cb35>
+</dataGuid>
+<dataGuid v="5f2be1a5-0687-4501-bb8c-cf21cb8211bf">
+<CyGuid_5f2be1a5-0687-4501-bb8c-cf21cb8211bf type_name="CyDesigner.Common.ProjMgmt.GUI.CyBookmarkData" version="1">
+<indicators />
+</CyGuid_5f2be1a5-0687-4501-bb8c-cf21cb8211bf>
+</dataGuid>
+</userData>
+</CyGuid_fdba8dfd-b15b-4469-9bbb-9e40c3e70997>
+<Unloaded />
+<OpenDocs>
+<name v=".\Levitador.cydsn\TopDesign\TopDesign.cysch" />
+<name v=".\Levitador.cydsn\Levitador.cydwr" />
+<name v=".\Levitador.cydsn\main.c" />
+<name v=".\Levitador.cydsn\control.h" />
+<name v=".\Levitador.cydsn\control.c" />
+<name v=".\Levitador.cydsn\modbus_slave.c" />
+<name v=".\Levitador.cydsn\consola.c" />
+</OpenDocs>
+<OpenDocsLayout><![CDATA[<?xml version="1.0"?><!--
+
+  Actipro Docking/MDI for WinForms
+  Copyright (c) 2001-2016 Actipro Software LLC.  All rights reserved.
+  http://www.actiprosoftware.com
+
+--><DocumentLayout Version="1.0"><LayoutData><TabbedMdiRootContainer Orientation="Horizontal"><TabbedMdiContainer Size="1107, 487" SelectedTabbedMdiWindow="20eadefb-4bfe-4188-832a-a805c5221da7"><DocumentWindow Key="C:\Users\Usuario\Documents\1.Yo\Universidad\Semestres\IX\VHDL\Proyecto_LN\Codigo\PSoC\psoc_levitador_pid\Levitador.cydsn\TopDesign\TopDesign.cysch" Guid="ebffba45-5309-44e8-98fc-d6f73e009e83" /><DocumentWindow Key="C:\Users\Usuario\Documents\1.Yo\Universidad\Semestres\IX\VHDL\Proyecto_LN\Codigo\PSoC\psoc_levitador_pid\Levitador.cydsn\Levitador.cydwr" Guid="26f7a5e0-dbd4-4b9c-bc34-c4b4223f6d1a" /><DocumentWindow Key="C:\Users\Usuario\Documents\1.Yo\Universidad\Semestres\IX\VHDL\Proyecto_LN\Codigo\PSoC\psoc_levitador_pid\Levitador.cydsn\main.c" Guid="83882efb-6ff3-43a3-82e6-13fa03165fd3" /><ToolWindow Key="Start Page:bd4649ab-da6b-4d04-a663-c722b8bf99db:Start Page" Guid="0915af67-b15c-4dcf-a6eb-79f93aa927c1" /><DocumentWindow Key="C:\Users\Usuario\Documents\1.Yo\Universidad\Semestres\IX\VHDL\Proyecto_LN\Codigo\PSoC\psoc_levitador_pid\Levitador.cydsn\control.h" Guid="586a726c-68d7-4a29-9717-35198d60988a" /><DocumentWindow Key="C:\Users\Usuario\Documents\1.Yo\Universidad\Semestres\IX\VHDL\Proyecto_LN\Codigo\PSoC\psoc_levitador_pid\Levitador.cydsn\control.c" Guid="326bfca8-b672-41a0-b82d-2acc6998b6f8" /><DocumentWindow Key="C:\Users\Usuario\Documents\1.Yo\Universidad\Semestres\IX\VHDL\Proyecto_LN\Codigo\PSoC\psoc_levitador_pid\Levitador.cydsn\modbus_slave.c" Guid="a563dab2-db5e-4f30-8c8e-4e367cc76924" /><DocumentWindow Key="C:\Users\Usuario\Documents\1.Yo\Universidad\Semestres\IX\VHDL\Proyecto_LN\Codigo\PSoC\psoc_levitador_pid\Levitador.cydsn\consola.c" Guid="20eadefb-4bfe-4188-832a-a805c5221da7" /></TabbedMdiContainer></TabbedMdiRootContainer><FloatingContainers /></LayoutData></DocumentLayout>]]></OpenDocsLayout>
+<config v="" />
+<AutoUpdate v="true" />
+</CyGuid_843a90a4-0c4b-4e44-991d-05e7fb117a21>
+</CyXmlSerializer>
