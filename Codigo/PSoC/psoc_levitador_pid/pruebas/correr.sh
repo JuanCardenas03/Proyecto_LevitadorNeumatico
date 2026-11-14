@@ -1,7 +1,7 @@
 #!/bin/sh
 # Compila y corre las dos pruebas del firmware en el PC.
 set -e
-FW=..
+FW=../Levitador.cydsn   # fuentes del firmware (proyecto de PSoC Creator)
 CF="-std=gnu99 -O2 -Wall -DPRUEBA_HOST -Istubs -I$FW"
 
 gcc $CF equivalencia.c $FW/control.c $FW/modbus_slave.c $FW/planta_modelo.c -lm -o equivalencia

@@ -1,6 +1,0 @@
-C:\Users\Usuario\Documents\1.Yo\Universidad\Semestres\IX\VHDL\Proyecto_LN\Codigo\PSoC\psoc_levitador_pid\Levitador.cydsn\Levitador.cyprj|48c2ff2d-975d-442d-98d6-83c17e31ab28
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|9a75d849-8ba8-4628-9e07-0e4d81717fae
-C:\Users\Usuario\Documents\PSoC Creator\4.4\Downloads ( 4.4).cylib\Downloads ( 4.4).cyprj|5b2bb480-f717-4313-bdb4-5dabdce81c30
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|63ddf1a8-e7a9-40a4-927e-8c357a315f14
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|b3fe14bc-7be5-40a7-ad65-b3fce00eb1a3
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|6df9b157-a764-4607-aa7c-7752a62ef358

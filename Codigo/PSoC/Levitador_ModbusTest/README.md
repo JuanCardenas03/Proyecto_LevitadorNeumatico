@@ -1,10 +1,14 @@
 # PSoC 5LP – Firmware de prueba: esclavo Modbus RTU con depuración por KitProg
 
-Levitador neumático · CY8CKIT-059 · PSoC Creator 4.4 · Mapa de registros de la **Guía ESP32 + HMI v2**
+Levitador neumático · CY8CKIT-059 · PSoC Creator 4.4 · Mapa de registros de la **Guía ESP32 + HMI v2** (idéntico al de la v4 vigente)
+
+> **Firmware de prueba, no es el de la implementación final.** Se usó para validar la comunicación antes de integrar el PID; su sucesor es `../psoc_levitador_pid`, que conserva el mismo esclavo Modbus y la misma recepción RS485. Se mantiene en el repositorio porque sigue siendo útil para aislar problemas del bus (sniffer, `mute`, valores forzados).
 
 Sirve para validar el tramo **ESP32 → RS485 → PSoC real** antes de integrar el PID. La PSoC responde como esclavo 1 con el mapa v2 completo, simula la planta y escribe por el USB del KitProg todo lo que recibe y responde.
 
-## Archivos
+## Archivos (en `Levitador.cydsn/`)
+
+Para usarlo tal cual: abrir `Levitador_ModbusTest.cywrk` en PSoC Creator 4.4 → *Build* → *Program*. Las secciones 1 a 3 documentan cómo se armó el proyecto, por si hay que reconstruirlo.
 
 | Archivo | Qué hace |
 |---|---|
@@ -110,7 +114,7 @@ Escriba `etapa 0`. La PSoC solo escucha:
        01 04 00 00 00 07 B1 C8
 ```
 
-- La ESP32 marcará `codigo 0xE2` (timeout) cada 2 s: **es lo esperado**, porque nadie responde.
+- La ESP32 marcará `codigo 0xE2` (timeout) en cada sondeo (cada 500 ms con el firmware v1.1; cada 2 s con la v1.0): **es lo esperado**, porque nadie responde.
 - Si sale `CRC MALO`, bytes extraños o nada, el problema es físico: A/B invertidos, falta el GND común, baudios distintos o falta el pull-up.
 
 ### Etapa 1: esclavo Modbus
@@ -121,13 +125,13 @@ Escriba `etapa 1` (es la etapa por defecto al arrancar):
 [LINK] Recibiendo tramas validas del maestro
 [RX] FC06 HR0 Setpoint = 30.0 cm [crudo=300] -> respondido OK
 [RX] FC05 Coil0 Habilitar control = ON -> respondido OK
-[RD] 1 s: FC04 x10 | ok=1520 crc=2 | SP=30.0cm Alt=22.6cm PWM=69.6% Err=7.4cm Est=0b000001
+[RD] 1 s: FC04 x2 | ok=1520 crc=2 | SP=30.0cm Alt=22.6cm PWM=69.6% Err=7.4cm Est=0b000001
 ```
 
 Verifique:
 
 1. En la ESP32 desaparecen los `0xE2` y el campo `Modbus=` de `[TEL]` baja a unos 10–20 ms.
-2. `FC04 x10` por segundo, que corresponde al sondeo de 100 ms.
+2. `FC04 x2` por segundo, que corresponde al sondeo de 500 ms de la ESP32 v1.1 (con la v1.0, que sondeaba cada 100 ms, sale `FC04 x10`).
 3. Cambie el SP en LabVIEW: aparece `[RX] FC06 HR0 …` y el `sp` de la línea DATA cambia.
 4. Con `EN:1` y modo auto, la altura simulada sube hacia el setpoint y la gráfica del HMI la sigue.
 5. Prueba `MODE:0` + `PWM:700`, cambio de ganancias, `EMG:1` (la altura cae) y `RST:1` (en `dump`, *pulsos RST* aumenta).
@@ -137,7 +141,7 @@ Verifique:
 | Comando | Para probar |
 |---|---|
 | `alt 226` | Altura fija en 22.6 cm |
-| `err -35` | Que el HMI maneje error **negativo** (pendiente de la sección 7) |
+| `err -35` | Que el HMI maneje error **negativo** (Sección 3.3 de la guía) |
 | `est 0x21` | Indicador de *fuera de rango* (bit 5) en el HMI |
 | `est 0x11` | Indicador de *timeout de comunicación* (bit 4) |
 | `mute 1` | **Enlace caído**: la PSoC deja de responder, la ESP32 da `0xE2` y el HMI deja de recibir DATA |
@@ -161,5 +165,7 @@ Verifique:
 - **Bit 4 del estado (timeout):** se activa si pasa más de 1 s sin tramas válidas.
 
 ## 8. Para el frente de control
+
+> Hecho: el resultado es `../psoc_levitador_pid`.
 
 Para pasar al firmware real: conservar `modbus_slave.c/.h` y la recepción de `main.c`, y reemplazar `plant_step()` por el lazo PID real, que escribe `ir[IR_ALTURA]`, `ir[IR_PWM]`, `ir[IR_ERROR]` e `ir[IR_ESTADO]` y lee `hr[]` y `coil[]`. El log y la consola se pueden dejar con `log 0` o quitarse.

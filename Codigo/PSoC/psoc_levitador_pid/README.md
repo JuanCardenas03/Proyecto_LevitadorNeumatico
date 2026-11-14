@@ -1,12 +1,14 @@
 # PSoC 5LP – Levitador neumático: esclavo Modbus + PID de altura
 
-CY8CKIT-059 · PSoC Creator 4.4 · Mapa de registros de la **Guía ESP32 + HMI v3** (sin cambios de contrato)
+CY8CKIT-059 · PSoC Creator 4.4 · Mapa de registros de la **Guía ESP32 + HMI v4** (contrato sin cambios desde la v3) · **Firmware final del proyecto**
 
-Este firmware une el esclavo Modbus de `psoc_modbus_test` con el PID que mejor funcionó en la ESP32 (`levitador_esp32_PID.ino`). El PID es **el mismo, línea por línea**: en el PC se comparó contra el `.ino` durante 3000 pasos y el duty coincide exactamente (ver §7). La única diferencia deliberada está en el paso de manual a automático (§8).
+Este firmware une el esclavo Modbus del firmware de prueba (`../Levitador_ModbusTest`) con el PID que mejor funcionó en la ESP32 autónoma (`Codigo/PID/levitador_esp32_PID/levitador_esp32_PID.ino`). El algoritmo del PID es **el mismo, línea por línea**: en el PC se comparó contra el `.ino`, con los mismos parámetros, durante 3000 pasos y el duty coincide exactamente (ver §7). La única diferencia deliberada está en el paso de manual a automático (§8).
 
 **Valores de arranque (ajustados en placa):** Kp = 1.00 · Ki = 0.60 · Kd = 0.05 · uFF = 49 % · piso = 20 %. Se cambian en `control.h` (`CTRL_*_DEFECTO`).
 
-## 1. Archivos
+**Abrir y programar:** abrir `psoc_levitador_pid.cywrk` en PSoC Creator 4.4 → *Build* → *Program* (KitProg por USB). Las fuentes están en `Levitador.cydsn/`; el esquemático (`TopDesign/TopDesign.cysch`) y los pines (`Levitador.cydwr`) ya incluyen todo lo descrito en §2 y §3, así que esas secciones sirven para revisar o reconstruir el proyecto.
+
+## 1. Archivos (en `Levitador.cydsn/`)
 
 | Archivo | Qué hace |
 |---|---|
@@ -17,12 +19,13 @@ Este firmware une el esclavo Modbus de `psoc_modbus_test` con el PID que mejor f
 | `planta_modelo.c/.h` | Levitador simulado, para probar la cadena HMI ↔ ESP32 ↔ PSoC sin ventilador |
 | `consola.c/.h` | Comandos por el KitProg (los mismos del monitor de la ESP32-PID) |
 | `debug_log.c/.h` | Log legible (sin cambios) |
+| `../pruebas/` | Pruebas en el PC (§7): equivalencia con el `.ino` y firmware completo simulado |
 
 `plant_sim.c/.h` del proyecto de prueba **se eliminan** (los reemplaza `control.c` + `planta_modelo.c`).
 
-## 2. TopDesign: qué agregar al proyecto de prueba
+## 2. TopDesign: qué se agregó al proyecto de prueba
 
-Se conserva todo lo de `psoc_modbus_test` (`UART_RS485`, `UART_DBG`, `Pin_LED`, pines y `.cydwr`). Se agregan:
+Se conserva todo lo de `Levitador_ModbusTest` (`UART_RS485`, `UART_DBG`, `Pin_LED`, pines y `.cydwr`). Se agregan:
 
 | Componente (Catalog) | Nombre | Configuración |
 |---|---|---|
@@ -50,7 +53,7 @@ Pines sugeridos (`.cydwr`):
 
 (P2[1] es el LED y P2[2] el botón de la placa; RS485 sigue en P3[0..2] y depuración en P12[6..7].)
 
-Luego: reemplace `main.c`, agregue los `.c/.h` nuevos, quite `plant_sim.*`, **Build** y **Program**.
+Para reconstruirlo desde el proyecto de prueba: reemplace `main.c`, agregue los `.c/.h` nuevos, quite `plant_sim.*`, **Build** y **Program**.
 
 ## 3. Cableado del sensor y del ventilador
 
@@ -66,7 +69,7 @@ GND:      GND de la 059 = GND de la fuente de 24 V = GND del HC-SR04 = GND del M
 
 ## 4. Comportamiento (lo que el equipo de HMI debe saber)
 
-**Mapa de registros: igual a la guía v3.** Lo que cambia es el significado concreto:
+**Mapa de registros: igual a la Sección 4 de la guía v4.** Lo que cambia es el significado concreto:
 
 | Registro | En este firmware |
 |---|---|
@@ -120,12 +123,12 @@ Validar por tramos (regla de oro de la guía). Marque cada paso antes de seguir.
 
 ## 7. Pruebas hechas en el PC (carpeta `pruebas/`)
 
-1. **Equivalencia con el `.ino`** (`equivalencia.c`): la medición, `pidPaso()` y `entrarPID()` del `.ino` transcritos tal cual, contra `control.c`, 120 s en lazo cerrado con cambios de setpoint y de ganancias, saturación, ecos atípicos y lecturas perdidas. **Diferencia máxima de duty: 0.0 %** en los 3000 pasos.
-2. **Firmware completo simulado** (`sim_host.c`): compila `main.c` y todos los módulos **sin modificar** sobre APIs falsas de PSoC Creator. Emula el HC-SR04 a nivel de pines (TRIG → flancos de ECHO → ISR con el Timer de 1 MHz), el ventilador y la pelota, y una ESP32 que sondea cada 500 ms. **33/33 verificaciones pasan**: valores de arranque, calibración sin bloquear Modbus, IR0 = HR0, error negativo, manual, manual → auto sin salto con `uFF` intacto (dos veces) y `ff` solo por consola, RST, EMG inmediato, timeout de 1.5 s, paro por sensor, excepciones 01/02/03, CRC malo, comandos de consola vistos por el maestro, rampa, plot y planta simulada. Respuesta Modbus: **3 ms** como máximo (contrato: < 100 ms).
+1. **Equivalencia con el `.ino`** (`equivalencia.c`): la medición, `pidPaso()` y `entrarPID()` del `.ino` transcritos tal cual, con los parámetros de arranque de la PSoC (`CTRL_*_DEFECTO` de `control.h`), contra `control.c`, 120 s en lazo cerrado con cambios de setpoint y de ganancias, saturación, ecos atípicos y lecturas perdidas. **Diferencia máxima de duty: 0.0 %** en los 3000 pasos.
+2. **Firmware completo simulado** (`sim_host.c`): compila `main.c` y todos los módulos **sin modificar** sobre APIs falsas de PSoC Creator (`stubs/project.h`). Emula el HC-SR04 a nivel de pines (TRIG → flancos de ECHO → ISR con el Timer de 1 MHz), el ventilador y la pelota, y una ESP32 que sondea cada 500 ms. **28/28 verificaciones pasan**: calibración del fondo sin bloquear Modbus, IR0 = HR0, bits de estado (sensor OK + pelota en objetivo), error negativo en complemento a 2, modo manual, manual → auto sin salto con `uFF` intacto, RST, EMG inmediato y su liberación, timeout de 1.5 s y enlace de vuelta con EN = 0, paro por sensor, excepciones 01/02/03, CRC malo, comandos de consola vistos por el maestro, rampa, plot y planta simulada. Respuesta Modbus: **3 ms** como máximo (contrato: < 100 ms).
 
 La planta simulada **no es el levitador real**: sirve para la lógica, no para juzgar la sintonía. La sintonía se valida en P3.
 
-Para correrlas: `gcc` en Linux/WSL, ver `pruebas/LEEME.md`.
+Para correrlas: `gcc` en Linux/WSL, ver `pruebas/LEEME.md`. Los archivos de salida que hay en `pruebas/` (`log_firmware.txt`, `traza.csv`, `simulacion_firmware.png`) corresponden a una corrida con este firmware final.
 
 ## 8. Diferencias con el `.ino` (fuera del PID, que es idéntico)
 

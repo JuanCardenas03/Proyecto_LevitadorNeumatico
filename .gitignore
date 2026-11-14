@@ -1,0 +1,38 @@
+# ---------------------------------------------------------------------------
+# PSoC Creator: archivos que se regeneran al compilar y estado del usuario
+# (se conserva el .hex final para poder programar sin compilar)
+# ---------------------------------------------------------------------------
+**/codegentemp/
+**/CortexM3/**
+!**/CortexM3/**/
+!**/CortexM3/**/*.hex
+*.cyprj.*
+*.cywrk.*
+
+# ---------------------------------------------------------------------------
+# Pruebas del firmware en el PC (ejecutables que genera correr.sh)
+# ---------------------------------------------------------------------------
+Codigo/PSoC/psoc_levitador_pid/pruebas/equivalencia
+Codigo/PSoC/psoc_levitador_pid/pruebas/sim_host
+*.exe
+*.o
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.pyc
+
+# ---------------------------------------------------------------------------
+# LabVIEW: configuración local del usuario
+# ---------------------------------------------------------------------------
+*.lvlps
+*.aliases
+
+# ---------------------------------------------------------------------------
+# Sistema operativo y Office
+# ---------------------------------------------------------------------------
+Thumbs.db
+desktop.ini
+.DS_Store
+~$*

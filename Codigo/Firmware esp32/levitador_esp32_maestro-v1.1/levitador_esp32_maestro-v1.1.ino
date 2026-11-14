@@ -7,7 +7,7 @@
  *
  *  Función: puente entre LabVIEW (HMI) y la PSoC 5LP (controlador PID).
  *   - Recibe comandos de texto de LabVIEW por USB y los escribe por Modbus RTU.
- *   - Lee la telemetría de la PSoC cada 100 ms y la reenvía a LabVIEW.
+ *   - Lee la telemetría de la PSoC cada 500 ms y la reenvía a LabVIEW.
  *
  *  Tres UART en uso:
  *   UART0 (Serial)  <-> LabVIEW por USB, 115200 8N1. Solo protocolo de texto.

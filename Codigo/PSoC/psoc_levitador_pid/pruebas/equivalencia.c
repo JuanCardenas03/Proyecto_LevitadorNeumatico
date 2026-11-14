@@ -15,8 +15,9 @@
 static float constrainf(float x, float a, float b) { return x < a ? a : (x > b ? b : x); }
 #define PERIODO_MS 40
 static const float DIST_MIN_CM = 3.0f, SALTO_MAX_CM = 10.0f, ALTURA_TUBO_CM = 42.0f;
-static float uFF = 51.0f, Kp = 1.0f, Ki = 0.6f, Kd = 0.2f;
-static const float TF_DERIV = 0.12f; static float dutyFloorPID = 0.0f; static const float I_MAX = 40.0f;
+static float uFF = CTRL_UFF_DEFECTO, Kp = CTRL_KP_DEFECTO_X100 / 100.0f,
+             Ki = CTRL_KI_DEFECTO_X100 / 100.0f, Kd = CTRL_KD_DEFECTO_X100 / 100.0f;
+static const float TF_DERIV = 0.12f; static float dutyFloorPID = CTRL_PISO_DEFECTO; static const float I_MAX = 40.0f;
 static float sp = 0, altura = 0, distanciaBase = 37.0f, dist = 37.0f, dutyPct = 0;
 static float I = 0, vFilt = 0, alturaPrev = 0;
 static float buf[3] = {37.0f, 37.0f, 37.0f}; static unsigned char idx = 0, fallos = 0;

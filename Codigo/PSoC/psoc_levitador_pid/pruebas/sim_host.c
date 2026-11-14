@@ -196,9 +196,9 @@ static void escenario(uint32_t ms) {
         check("Calibracion del fondo al arrancar (no bloqueante)", fabs(ci->base - 36.4) < 0.3 && log_tiene("Calibracion OK", 0), det);
         check("Respondio Modbus durante la calibracion", n_timeouts == 0 && n_resp_ok >= 2, NULL);
         break;
-    case 2000: fc06(HR_KP, 100); break;
-    case 2020: fc06(HR_KI, 60); break;
-    case 2040: fc06(HR_KD, 20); break;
+    case 2000: fc06(HR_KP, CTRL_KP_DEFECTO_X100); break;
+    case 2020: fc06(HR_KI, CTRL_KI_DEFECTO_X100); break;
+    case 2040: fc06(HR_KD, CTRL_KD_DEFECTO_X100); break;
     case 2060: fc06(HR_MODO, 1); break;
     case 2080: fc06(HR_SETPOINT, 150); break;
     case 2100: fc05(COIL_EN, 1); iniciar_escalon(2.1, 15.0); break;
@@ -228,7 +228,7 @@ static void escenario(uint32_t ms) {
     case 26000: fc06(HR_MODO, 1); marca = loglen; break;
     case 26050:
         snprintf(det, sizeof det, "uFF %.1f %%, primer duty PID %.1f %%", ci->uFF, ci->duty);
-        check("Manual -> auto sin salto (adopta el duty como uFF)", fabs(ci->uFF - 52.0) < 0.01 && fabs(ci->duty - 52.0) < 3.0 && ci->modo == CM_PID, det); break;
+        check("Manual -> auto sin salto (uFF intacto, I = duty - uFF)", fabs(ci->uFF - CTRL_UFF_DEFECTO) < 0.01 && fabs(ci->duty - 52.0) < 3.0 && ci->modo == CM_PID, det); break;
     case 30000: fc05(COIL_RST_INT, 1); marca = loglen; break;
     case 30050: fc05(COIL_RST_INT, 0); break;
     case 30100:

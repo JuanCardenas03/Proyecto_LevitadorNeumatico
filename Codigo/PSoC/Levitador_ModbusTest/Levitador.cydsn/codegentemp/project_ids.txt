@@ -1,7 +1,0 @@
-C:\Users\Usuario\Documents\1.Yo\Universidad\Semestres\IX\VHDL\Proyecto_LN\Codigo\PSoC\Levitador_ModbusTest\Levitador.cydsn\Levitador.cyprj|c872025b-4cd7-415d-a582-1c87665f71ef
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|b688fbea-c776-4771-b38d-bf0697121388
-C:\Users\Usuario\Documents\PSoC Creator\4.4\Downloads ( 4.4).cylib\Downloads ( 4.4).cyprj|767dad10-1c65-4547-845a-04c75ee0d4dc
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|18171048-d4f6-46ab-bbe8-0f4e6ff6e9da
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|f0ff405c-7eb2-4890-8534-3d9520152466
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|95fee1aa-0993-48eb-ace2-1286a54929bc
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\dev\psoc3\AnalogDevice\PSoC35AnalogDevice.cylib\PSoC35AnalogDevice.cyprj|22d4eb73-d67d-4bc1-8fd3-3bba6d302359

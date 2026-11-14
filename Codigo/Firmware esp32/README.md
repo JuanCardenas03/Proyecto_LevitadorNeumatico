@@ -13,15 +13,17 @@ Firmware de la ESP32 del proyecto **Levitador Neumático con control PID en PSoC
                                         depuración (USB-TTL)
 ```
 
-Versión actual: **v1.1**. Contrato de comunicación: **Guía ESP32 + HMI v3**.
+Versión actual (final): **v1.1**, en `levitador_esp32_maestro-v1.1/`. Contrato de comunicación: **Guía ESP32 + HMI v4** (`Recursos/03_Guia_Integracion/`; el contrato no cambió desde la v3).
 
 ## Estado
 
 | Etapa | Estado |
 |---|---|
-| Comunicación bidireccional con LabVIEW (comandos y telemetría) | Funciona, probada contra un esclavo Modbus simulado |
-| Estado del enlace en la trama `DATA` y timeout de 100 ms (v1.1) | Implementado; pendiente probar en placa |
-| Integración con la PSoC real | Pendiente (la PSoC está en desarrollo) |
+| Comunicación bidireccional con LabVIEW (comandos y telemetría) | Funciona (Fases 1 y 2 de la guía, cerradas) |
+| Estado del enlace en la trama `DATA` y timeout de 100 ms (v1.1) | Implementado y en uso con la PSoC |
+| Integración con la PSoC real (`Codigo/PSoC/psoc_levitador_pid`) | Hecha: MAX485 #2 en la PSoC, telemetría real y setpoint desde el HMI (Fase 3) |
+
+La PSoC final responde en ≈ 3 ms y su timeout de seguridad es de 1.5 s (mayor que el periodo de sondeo de 500 ms, como exige el contrato).
 
 ## Hardware y conexiones
 
@@ -88,17 +90,17 @@ Una línea por comando: `CLAVE:VALOR` terminada en salto de línea (`\n`, LF, `0
 
 | Comando | Rango aceptado | Se escribe en | Nota |
 |---|---|---|---|
-| `SP:300` | 0–1000 (30.0 cm) | Holding 0x0000 | Fuera de rango: se recorta |
-| `KP:40` | 0–65535 (0.40) | Holding 0x0001 | Se recorta |
-| `KI:104` | 0–65535 (1.04) | Holding 0x0002 | Se recorta |
-| `KD:22` | 0–65535 (0.22) | Holding 0x0003 | Se recorta |
+| `SP:150` | 0–1000 (15.0 cm) | Holding 0x0000 | Fuera de rango: se recorta. Máximo útil en la PSoC ≈ 310 (fondo − 5 cm); ese límite lo pone el HMI |
+| `KP:100` | 0–65535 (1.00) | Holding 0x0001 | Se recorta |
+| `KI:60` | 0–65535 (0.60) | Holding 0x0002 | Se recorta |
+| `KD:5` | 0–65535 (0.05) | Holding 0x0003 | Se recorta |
 | `MODE:1` | 0 o 1 | Holding 0x0004 | Otro valor se interpreta como 1 |
 | `PWM:500` | 0–1000 (50.0 %) | Holding 0x0005 | Se recorta |
 | `EN:1` | 0 o 1 | Coil 0x0000 | Otro valor se interpreta como 1 |
 | `EMG:1` | 0 o 1 | Coil 0x0002 | Otro valor se interpreta como 1 |
 | `RST:1` | cualquiera | Coil 0x0001 | Pulso: ON, 50 ms, OFF |
 
-Las claves no distinguen mayúsculas de minúsculas. Aunque LabVIEW ya limita los rangos, la ESP32 los vuelve a validar como segunda barrera; cada ajuste deja un aviso en el puerto de depuración.
+Los valores de ganancias del ejemplo son los de arranque de la PSoC (ajustados en placa); el HMI debe usarlos por defecto. Las claves no distinguen mayúsculas de minúsculas. Aunque LabVIEW ya limita los rangos, la ESP32 los vuelve a validar como segunda barrera; cada ajuste deja un aviso en el puerto de depuración.
 
 **Reglas del parser:**
 - Terminador: `\n` o `\r`. Con `\r\n` la segunda mitad se ignora.
@@ -170,7 +172,7 @@ El campo `enlace` refleja **solo** el sondeo periódico (la lectura FC04). Se ca
 - **Ciclo de telemetría:** una única transacción FC04 de 7 registros cada 500 ms, seguida siempre de una línea `DATA,`.
 - **Timeout del maestro:** **100 ms** (la librería trae 2000 ms; ver [Compilación](#compilación)). Si el esclavo no responde, el `loop()` se bloquea como máximo 100 ms por transacción. Con 3 fallos para declarar la caída, `Sin conexion` aparece unos 1–1.5 s después de perder el enlace.
 - **Escrituras:** cada comando es una transacción. Si el esclavo no responde, el comando tarda hasta 100 ms en fallar (`RST`, que son dos escrituras más el pulso, hasta ~250 ms). No hay reintentos.
-- **Silencio de LabVIEW:** se mantiene el último setpoint. La ESP32 solo escribe en la PSoC cuando llega un comando; la telemetría sigue leyéndose y enviándose. La PSoC conserva además su propio timeout de seguridad por Modbus, que debe ser **mayor que el periodo de sondeo** (500 ms) para no dispararse en operación normal.
+- **Silencio de LabVIEW:** se mantiene el último setpoint. La ESP32 solo escribe en la PSoC cuando llega un comando; la telemetría sigue leyéndose y enviándose. La PSoC conserva además su propio timeout de seguridad por Modbus (**1.5 s**, mayor que el periodo de sondeo de 500 ms): si salta, pone EN = 0 y el HMI debe volver a enviar `EN:1`.
 - **`RST`:** el pulso usa un `delay(50)`, de modo que el `loop()` se bloquea 50 ms. Es aceptable por ser un comando poco frecuente.
 
 ## Puerto de depuración (UART1)
@@ -196,12 +198,12 @@ Muestra los valores ya des-escalados. Formatos principales:
 ## Compilación
 
 1. Arduino IDE con el soporte para placas ESP32 (core de Espressif).
-2. Guardar el sketch como `levitador_esp32_maestro/levitador_esp32_maestro.ino` (en Arduino la carpeta debe llamarse igual que el sketch).
-3. **Copia local de ModbusMaster** (Doc Walker, v2.0.1) dentro del sketch, con el timeout reducido:
+2. Abrir `levitador_esp32_maestro-v1.1/levitador_esp32_maestro-v1.1.ino` (en Arduino la carpeta debe llamarse igual que el sketch; no renombrar una sin la otra).
+3. **Copia local de ModbusMaster** (Doc Walker, v2.0.1): **ya viene incluida** en `src/ModbusMaster/` con el timeout reducido. Solo hay que rehacerla si se actualiza la librería:
 
    ```
-   levitador_esp32_maestro/
-   ├── levitador_esp32_maestro.ino
+   levitador_esp32_maestro-v1.1/
+   ├── levitador_esp32_maestro-v1.1.ino
    ├── README.md
    └── src/
        └── ModbusMaster/
@@ -229,6 +231,8 @@ Se usa un esclavo Modbus RTU simulado (el simulador propio en Python/Tkinter, o 
 
 Para probar el lado de LabVIEW, enviar comandos por USB y verificar en el simulador que el registro o coil correspondiente cambia de inmediato.
 
+Con la PSoC pero sin ventilador: en la consola de la PSoC, `fuente sim` activa un levitador simulado y la cadena HMI ↔ ESP32 ↔ PSoC funciona igual.
+
 Para probar el estado del enlace y el timeout:
 
 - **Desconectar el esclavo** (o cerrar el simulador): las líneas `[RX] ERROR ... 0xE2` deben salir cada 500 ms, y LabVIEW debe pasar de `Conexion inestable` a `Sin conexion` en 1–1.5 s, con los valores numéricos congelados.
@@ -238,13 +242,14 @@ Para probar el estado del enlace y el timeout:
 
 ## Pendiente
 
-- [ ] Probar en placa la v1.1: estado del enlace, timeout de 100 ms y respuesta de `EMG` con el esclavo desconectado.
-- [ ] LabVIEW: separar el 9.º campo (`enlace`) como texto y mostrarlo.
-- [ ] Implementar en la PSoC el mapa de la Sección 4 de la guía (IR 0–6, con IR 0 como espejo del holding 0x0000).
-- [ ] Confirmar con el frente de control que el timeout de seguridad de la PSoC es mayor que 500 ms.
-- [ ] Pruebas con la PSoC real (MAX485 #2): direcciones, CRC y tiempos de respuesta.
+Según el plan de trabajo de la guía v4 (Sección 6):
+
+- [x] Implementar en la PSoC el mapa de la Sección 4 (IR 0–6, con IR 0 como espejo del holding 0x0000).
+- [x] Confirmar que el timeout de seguridad de la PSoC es mayor que 500 ms (es de 1.5 s).
+- [x] Pruebas con la PSoC real (MAX485 #2): telemetría real y setpoint desde el HMI.
+- [ ] Fase 2b: desconectar A/B → `Sin conexion` en 1–1.5 s; reconectar → `Conexion OK`; `EMG:1` con el bus desconectado falla en ≤ 100 ms.
+- [ ] LabVIEW: separar el 9.º campo (`enlace`) como texto y mostrarlo; aceptar el campo `error` con signo.
 - [ ] Prueba de resistencia: 30 minutos continuos sin que crezcan los errores de CRC.
-- [ ] Confirmar que el HMI acepta el campo `error` con signo.
 - [ ] Opcional: confirmación de cada comando hacia LabVIEW (hoy los errores de escritura solo van a depuración).
 - [ ] Opcional: reemplazar el `delay(50)` de `RST` por una máquina de estados no bloqueante.
 
@@ -257,8 +262,17 @@ Para probar el estado del enlace y el timeout:
 
 ## Archivos
 
-| Archivo | Descripción |
-|---|---|
-| `levitador_esp32_maestro.ino` | Firmware de la ESP32 |
-| `src/ModbusMaster/` | Copia local de ModbusMaster v2.0.1 con timeout de 100 ms |
-| `README.md` | Este documento |
+```
+Firmware esp32/
+├── README.md                         <- este documento
+├── levitador_esp32_maestro-v1.1/     <- FIRMWARE FINAL (v1.1)
+│   ├── levitador_esp32_maestro-v1.1.ino
+│   └── src/ModbusMaster/             <- copia local de ModbusMaster v2.0.1 con timeout de 100 ms
+├── levitador_esp32_maestro/          <- v1.0 (histórico: sondeo cada 100 ms, timeout de 2000 ms, sin campo enlace)
+└── Pruebas/                          <- sketches de desarrollo, no se usan en la implementación final
+    ├── firmware_esp32_modbus_test-V1 … V9   (evolución del maestro; la V4 no se conservó)
+    ├── prueba_comunicacion_esp-labview      (tramas DATA simuladas para probar el VI, formato antiguo "DATA:")
+    └── prueba_pwm_version1                  (primera prueba del PWM de 25 kHz al ventilador)
+```
+
+La v1.0 parte de la V9 de las pruebas; la v1.1 es la que está cargada en la ESP32 del montaje final.
